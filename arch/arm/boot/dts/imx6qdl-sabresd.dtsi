@@ -673,6 +673,7 @@
 				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 0x80000000	/* LCD PWREN*/
 				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 0x80000000	/* LCD REV */
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
+				MX6QDL_PAD_EIM_DA14__GPIO3_IO14 0x80000000	/* SD2 DET: microSD */
 			>;
 		};
 
@@ -1065,8 +1066,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc2>;
 	bus-width = <4>;
-	cd-gpios = <&gpio2 2 0>;
-	wp-gpios = <&gpio2 3 0>;
+	cd-gpios = <&gpio3 14 0>;
+	wp-gpios = <>;
 	no-1-8-v;
 	wifi-host;
 	pm-ignore-notify;
