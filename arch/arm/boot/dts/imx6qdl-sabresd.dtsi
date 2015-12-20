@@ -671,6 +671,7 @@
 				MX6QDL_PAD_NANDF_CS2__GPIO6_IO15 0x80000000
 				MX6QDL_PAD_NANDF_CS3__GPIO6_IO16 0x80000000
 				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 0x80000000	/* LCD PWREN*/
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 0x80000000	/* LCD REV */
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
 			>;
 		};
@@ -944,6 +945,7 @@
 	status = "okay";
 
 	pwren-gpios = <&gpio6 1 0>;
+	lcdrev-gpios = <&gpio6 2 0>;
 	blten-gpios = <&gpio7 11 0>;
 
 	lvds-channel@0 {

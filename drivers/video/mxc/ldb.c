@@ -303,7 +303,7 @@ static const struct of_device_id ldb_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, ldb_dt_ids);
 
-int pwren_gpio;
+int pwren_gpio, lcdrev;
 
 static int ldb_init(struct mxc_dispdrv_handle *mddh,
 		    struct mxc_dispdrv_setting *setting)
@@ -565,6 +565,13 @@ static int ldb_enable(struct mxc_dispdrv_handle *mddh,
 		if (ret)
 			pr_warn("failed to set low: ledpwr gpio\n");
 	}
+#if 0
+	if (gpio_is_valid(lcdrev)) {
+		ret = gpio_direction_output(lcdrev, GPIOF_OUT_INIT_HIGH);
+		if (ret)
+			pr_warn("failed to set low: ledpwr gpio\n");
+	}
+#endif
 
 	return 0;
 }
@@ -595,6 +602,14 @@ static void ldb_disable(struct mxc_dispdrv_handle *mddh,
 		if (ret)
 			pr_warn("failed to set low: ledpwr gpio\n");
 	}
+
+#if 0
+	if (gpio_is_valid(lcdrev)) {
+		ret = gpio_direction_output(lcdrev, GPIOF_OUT_INIT_LOW);
+		if (ret)
+			pr_warn("failed to set low: ledpwr gpio\n");
+	}
+#endif
 
 	return;
 }
@@ -752,12 +767,20 @@ static int ldb_probe(struct platform_device *pdev)
 			pr_warn("failed to request LCD power enable gpio\n");
 	}
 
+	lcdrev = of_get_named_gpio(np, "lcdrev-gpios", 0);
+	if (gpio_is_valid(lcdrev)) {
+		ret = gpio_request_one(lcdrev, GPIOF_OUT_INIT_HIGH,
+				"lcdrev-gpios");
+		if (ret)
+			pr_warn("failed to request LCD REV gpio\n");
+	}
+
 	blten_gpio = of_get_named_gpio(np, "blten-gpios", 0);
 	if (gpio_is_valid(blten_gpio)) {
 		ret = gpio_request_one(blten_gpio, GPIOF_OUT_INIT_HIGH,
 				"per5v-gpios");
 		if (ret)
-			pr_warn("failed to request LCD power enable gpio\n");
+			pr_warn("failed to request backlight enable gpio\n");
 	}
 
 	ext_ref = of_property_read_bool(np, "ext-ref");
