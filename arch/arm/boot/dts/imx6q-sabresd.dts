@@ -41,11 +41,11 @@
 };
 
 &mxcfb2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcfb3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcfb4 {

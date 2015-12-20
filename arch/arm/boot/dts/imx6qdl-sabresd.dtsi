@@ -254,12 +254,12 @@
 		default_ifmt = "RGB565";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu1>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	pwm-backlight {
 		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 50000>;
+		pwms = <&pwm4 0 50000>;
 		brightness-levels = <
 			0  /*1  2  3  4  5  6*/  7  8  9
 			10 11 12 13 14 15 16 17 18 19
@@ -394,7 +394,7 @@
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 25 0>;
 	fsl,magic-packet;
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c1 {
@@ -453,6 +453,7 @@
 		csi_id = <0>;
 		mclk = <24000000>;
 		mclk_source = <0>;
+		status = "disabled";
 	};
 };
 
@@ -669,6 +670,8 @@
 				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14 0x80000000
 				MX6QDL_PAD_NANDF_CS2__GPIO6_IO15 0x80000000
 				MX6QDL_PAD_NANDF_CS3__GPIO6_IO16 0x80000000
+				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 0x80000000	/* LCD PWREN*/
+				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
 			>;
 		};
 
@@ -815,6 +818,12 @@
 			>;
 		};
 
+		pinctrl_pwm4: pwm4grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT2__PWM4_OUT		0x1b0b1
+			>;
+		};
+
 		pinctrl_uart1: uart1grp {
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT10__UART1_TX_DATA	0x1b0b1
@@ -934,9 +943,13 @@
 &ldb {
 	status = "okay";
 
+	pwren-gpios = <&gpio6 1 0>;
+	blten-gpios = <&gpio7 11 0>;
+
 	lvds-channel@0 {
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
+		primary;
 		status = "okay";
 
 		display-timings {
@@ -958,7 +971,6 @@
 	lvds-channel@1 {
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		primary;
 		status = "okay";
 
 		display-timings {
@@ -1004,6 +1016,12 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
+	status = "okay";
+};
+
+&pwm4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm4>;
 	status = "okay";
 };
 
