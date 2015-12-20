@@ -26,6 +26,7 @@
 #include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/types.h>
@@ -302,6 +303,8 @@ static const struct of_device_id ldb_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, ldb_dt_ids);
 
+int pwren_gpio;
+
 static int ldb_init(struct mxc_dispdrv_handle *mddh,
 		    struct mxc_dispdrv_setting *setting)
 {
@@ -556,6 +559,13 @@ static int ldb_enable(struct mxc_dispdrv_handle *mddh,
 	}
 
 	regmap_write(ldb->regmap, ldb->ctrl_reg, ldb->ctrl);
+	pr_debug("======= ldb enabled\n");
+	if (gpio_is_valid(pwren_gpio)) {
+		ret = gpio_direction_output(pwren_gpio, GPIOF_OUT_INIT_LOW);
+		if (ret)
+			pr_warn("failed to set low: ledpwr gpio\n");
+	}
+
 	return 0;
 }
 
@@ -579,6 +589,13 @@ static void ldb_disable(struct mxc_dispdrv_handle *mddh,
 	}
 
 	regmap_write(ldb->regmap, ldb->ctrl_reg, ldb->ctrl);
+	pr_debug("======= ldb diabled\n");
+	if (gpio_is_valid(pwren_gpio)) {
+		ret = gpio_direction_output(pwren_gpio, GPIOF_OUT_INIT_HIGH);
+		if (ret)
+			pr_warn("failed to set low: ledpwr gpio\n");
+	}
+
 	return;
 }
 
@@ -708,6 +725,7 @@ static int ldb_probe(struct platform_device *pdev)
 	bool ext_ref;
 	int i, data_width, mapping, child_count = 0;
 	char clkname[16];
+	int ret, blten_gpio;
 
 	ldb = devm_kzalloc(dev, sizeof(*ldb), GFP_KERNEL);
 	if (!ldb)
@@ -725,6 +743,22 @@ static int ldb_probe(struct platform_device *pdev)
 	ldb->ctrl_reg = ldb_info->ctrl_reg;
 	ldb->clk_fixup = ldb_info->clk_fixup;
 	ldb->primary_chno = -1;
+
+	pwren_gpio = of_get_named_gpio(np, "pwren-gpios", 0);
+	if (gpio_is_valid(pwren_gpio)) {
+		ret = gpio_request_one(pwren_gpio, GPIOF_OUT_INIT_LOW,
+				"ledpwr-gpios");
+		if (ret)
+			pr_warn("failed to request LCD power enable gpio\n");
+	}
+
+	blten_gpio = of_get_named_gpio(np, "blten-gpios", 0);
+	if (gpio_is_valid(blten_gpio)) {
+		ret = gpio_request_one(blten_gpio, GPIOF_OUT_INIT_HIGH,
+				"per5v-gpios");
+		if (ret)
+			pr_warn("failed to request LCD power enable gpio\n");
+	}
 
 	ext_ref = of_property_read_bool(np, "ext-ref");
 	if (!ext_ref && ldb_info->ext_bgref_cap)
