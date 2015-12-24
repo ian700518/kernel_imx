@@ -132,7 +132,7 @@
 
 		power {
 			label = "Power Button";
-			gpios = <&gpio3 29 1>;
+			gpios = <&gpio3 13 1>;
 			gpio-key,wakeup;
 			linux,code = <KEY_POWER>;
 		};
@@ -674,6 +674,7 @@
 				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 0x80000000	/* LCD REV */
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
 				MX6QDL_PAD_EIM_DA14__GPIO3_IO14 0x80000000	/* SD2 DET: microSD */
+				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x80000000
 			>;
 		};
 
