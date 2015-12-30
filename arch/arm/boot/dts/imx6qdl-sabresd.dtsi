@@ -427,6 +427,30 @@
 		>;
        };
 
+	fxas2100x@0e {
+		compatible = "fsl,fxas2100x";
+		reg = <0x20>;
+		position = <3>;
+	};
+
+	fxls8471@1e {
+		compatible = "fsl,fxls8471";
+		reg = <0x1e>;
+		position = <0>;
+		interrupt-parent = <&gpio6>;
+		interrupts = <0 8>;
+	};
+
+
+	mag3110@0e {
+		compatible = "fsl,mag3110";
+		reg = <0x0e>;
+		position = <1>;
+		/*interrupt-parent = <&gpio3>;
+		interrupts = <16 1>;*/
+	};
+
+
 	mma8451@1c {
 		compatible = "fsl,mma8451";
 		reg = <0x1c>;
@@ -609,22 +633,18 @@
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
 
+	mpl3115@60 {
+		compatible = "fsl,mpl3115";
+		reg = <0x60>;
+		position = <3>;
+	};
+
 	egalax_ts@04 {
 		compatible = "eeti,egalax_ts";
 		reg = <0x04>;
 		interrupt-parent = <&gpio6>;
 		interrupts = <7 2>;
 		wakeup-gpios = <&gpio6 7 0>;
-	};
-
-	mag3110@0e {
-		compatible = "fsl,mag3110";
-		reg = <0x0e>;
-		position = <1>;
-		vdd-supply = <&reg_sensor>;
-		vddio-supply = <&reg_sensor>;
-		interrupt-parent = <&gpio3>;
-		interrupts = <16 1>;
 	};
 
 	isl29023@44 {
@@ -675,6 +695,7 @@
 				MX6QDL_PAD_EIM_DA14__GPIO3_IO14 0x80000000	/* SD2 DET: microSD */
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x80000000
 				MX6QDL_PAD_ENET_RXD0__XTALOSC_OSC32K_32K_OUT 0x100b1
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03 0x100b1	/* ACC INT, FXLS8471 */
 			>;
 		};
 
