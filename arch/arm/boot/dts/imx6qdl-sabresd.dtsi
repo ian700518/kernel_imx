@@ -114,15 +114,16 @@
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
 			regulator-name = "wlreg_on";
-			gpio = <&gpio3 1 0>;
+			gpio = <&gpio3 1 GPIO_ACTIVE_HIGH>;
 			startup-delay-us = <100>;
 			enable-active-high;
 		};
 
-		bcmdhd_wlan_1: bcmdhd_wlan@0 {
-			compatible = "android,bcmdhd_wlan";
-			wlreg_on-supply = <&wlreg_on>;
-		};
+	};
+
+	bcmdhd_wlan_1: bcmdhd_wlan@0 {
+		compatible = "android,bcmdhd_wlan";
+		wlreg_on-supply = <&wlreg_on>;
 	};
 
 	gpio-keys {
@@ -1076,6 +1077,7 @@
 &usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1>;
+	bus-width = <4>;
 	no-1-8-v;
 	wifi-host;
 	keep-power-in-suspend;
