@@ -154,29 +154,40 @@
 	};
 
 	sound {
-		compatible = "fsl,imx6q-sabresd-wm8962",
-			   "fsl,imx-audio-wm8962";
-		model = "wm8962-audio";
+		compatible = "fsl,imx6ul-evk-wm8960",
+			   "fsl,imx-audio-wm8960";
+		model = "wm8960-audio";
 		cpu-dai = <&ssi2>;
 		audio-codec = <&codec>;
 		asrc-controller = <&asrc>;
+		codec-master;
+		/*
+                 * hp-det = <hp-det-pin hp-det-polarity>;
+		 * hp-det-pin: JD1 JD2  or JD3
+		 * hp-det-polarity = 0: hp detect high for headphone
+		 * hp-det-polarity = 1: hp detect high for speaker
+		 */
+		hp-det = <3 0>;
+		hp-det-gpios = <&gpio5 14 0>;
 		audio-routing =
-			"Headphone Jack", "HPOUTL",
-			"Headphone Jack", "HPOUTR",
-			"Ext Spk", "SPKOUTL",
-			"Ext Spk", "SPKOUTR",
-			"MICBIAS", "AMIC",
-			"IN3R", "MICBIAS",
-			"DMIC", "MICBIAS",
-			"DMICDAT", "DMIC",
+			"Headset Jack", "HP_L",
+			"Headset Jack", "HP_R",
+			"Ext Spk", "SPK_LP",
+			"Ext Spk", "SPK_LN",
+			"Ext Spk", "SPK_RP",
+			"Ext Spk", "SPK_RN",
+			"LINPUT2", "Hp MIC",
+			"LINPUT3", "Hp MIC",
+			"RINPUT1", "Main MIC",
+			"RINPUT2", "Main MIC",
+			"Hp MIC", "MICB",
+			"Main MIC", "MICB",
 			"CPU-Playback", "ASRC-Playback",
 			"Playback", "CPU-Playback",
 			"ASRC-Capture", "CPU-Capture",
 			"CPU-Capture", "Capture";
 		mux-int-port = <2>;
-		mux-ext-port = <3>;
-		hp-det-gpios = <&gpio7 8 1>;
-		mic-det-gpios = <&gpio1 9 1>;
+		mux-ext-port = <5>;
 	};
 
 	sound-hdmi {
@@ -403,29 +414,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1>;
 	status = "okay";
-
-	codec: wm8962@1a {
-		compatible = "wlf,wm8962";
-		reg = <0x1a>;
-		clocks = <&clks 201>;
-		DCVDD-supply = <&reg_audio>;
-		DBVDD-supply = <&reg_audio>;
-		AVDD-supply = <&reg_audio>;
-		CPVDD-supply = <&reg_audio>;
-		MICVDD-supply = <&reg_audio>;
-		PLLVDD-supply = <&reg_audio>;
-		SPKVDD1-supply = <&reg_audio>;
-		SPKVDD2-supply = <&reg_audio>;
-		amic-mono;
-		gpio-cfg = <
-			0x0000 /* 0:Default */
-			0x0000 /* 1:Default */
-			0x0013 /* 2:FN_DMICCLK */
-			0x0000 /* 3:Default */
-			0x8014 /* 4:FN_DMICCDAT */
-			0x0000 /* 5:Default */
-		>;
-       };
 
 	fxas2100x@0e {
 		compatible = "fsl,fxas2100x";
@@ -655,6 +643,14 @@
 		interrupt-parent = <&gpio3>;
 		interrupts = <9 2>;
 	};
+
+	codec: wm8960@1a {
+		compatible = "wlf,wm8960";
+		reg = <0x1a>;
+		clocks = <&clks IMX6QDL_CLK_CKO>;
+		clock-names = "mclk";
+		wlf,shared-lrclk;
+	};
 };
 
 &iomuxc {
@@ -680,7 +676,6 @@
 				MX6QDL_PAD_EIM_A25__GPIO5_IO02 0x80000000
 				MX6QDL_PAD_EIM_D23__GPIO3_IO23 0x80000000
 				MX6QDL_PAD_EIM_EB3__GPIO2_IO31 0x80000000
-				MX6QDL_PAD_EIM_D16__GPIO3_IO16 0x80000000
 				MX6QDL_PAD_SD3_RST__GPIO7_IO08	0x80000000
 				MX6QDL_PAD_GPIO_9__GPIO1_IO09 	0x80000000
 				MX6QDL_PAD_EIM_DA9__GPIO3_IO09 0x80000000
@@ -696,15 +691,17 @@
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x80000000
 				MX6QDL_PAD_ENET_RXD0__XTALOSC_OSC32K_32K_OUT 0x100b1
 				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03 0x100b1	/* ACC INT, FXLS8471 */
+				MX6QDL_PAD_GPIO_3__CCM_CLKO2	0x130b0
 			>;
 		};
 
 		pinctrl_audmux: audmuxgrp {
 			fsl,pins = <
-				MX6QDL_PAD_CSI0_DAT7__AUD3_RXD		0x130b0
-				MX6QDL_PAD_CSI0_DAT4__AUD3_TXC		0x130b0
-				MX6QDL_PAD_CSI0_DAT5__AUD3_TXD		0x110b0
-				MX6QDL_PAD_CSI0_DAT6__AUD3_TXFS		0x130b0
+				MX6QDL_PAD_DISP0_DAT19__AUD5_RXD	0x130b0
+				MX6QDL_PAD_DISP0_DAT18__AUD5_TXFS	0x130b0
+				MX6QDL_PAD_DISP0_DAT17__AUD5_TXD	0x130b0
+				MX6QDL_PAD_DISP0_DAT16__AUD5_TXC	0x130b0
+				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14	0x130b0	/* TODO */
 			>;
 		};
 
@@ -747,7 +744,6 @@
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D29__GPIO3_IO29 0x80000000
 				MX6QDL_PAD_GPIO_4__GPIO1_IO04  0x80000000
-				MX6QDL_PAD_GPIO_5__GPIO1_IO05  0x80000000
 			>;
 		};
 
@@ -773,14 +769,14 @@
 
 		pinctrl_i2c2: i2c2grp {
 			fsl,pins = <
-				MX6QDL_PAD_KEY_COL3__I2C2_SCL		0x4001b8b1
-				MX6QDL_PAD_KEY_ROW3__I2C2_SDA		0x4001b8b1
+				MX6QDL_PAD_EIM_EB2__I2C2_SCL		0x4001b8b1
+				MX6QDL_PAD_EIM_D16__I2C2_SDA		0x4001b8b1
 			 >;
 		};
 
 		pinctrl_i2c3: i2c3grp {
 			fsl,pins = <
-				MX6QDL_PAD_GPIO_3__I2C3_SCL		0x4001b8b1
+				MX6QDL_PAD_GPIO_5__I2C3_SCL		0x4001b8b1
 				MX6QDL_PAD_GPIO_6__I2C3_SDA		0x4001b8b1
 			>;
 		};
