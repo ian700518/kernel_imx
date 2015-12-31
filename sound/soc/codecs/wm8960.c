@@ -18,6 +18,7 @@
 #include <linux/clk.h>
 #include <linux/i2c.h>
 #include <linux/slab.h>
+#include <linux/regulator/consumer.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -107,6 +108,11 @@ static const struct reg_default wm8960_reg_defaults[] = {
 	{ 0x37, 0x00e9 },
 };
 
+#define WM8960_NUM_SUPPLIES 1
+static const char *wm8960_supply_names[WM8960_NUM_SUPPLIES] = {
+	"VAUD",
+};
+
 static bool wm8960_volatile(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
@@ -129,6 +135,7 @@ struct wm8960_priv {
 	int playback_fs;
 	int bclk;
 	int sysclk;
+	struct regulator_bulk_data supplies[WM8960_NUM_SUPPLIES];
 	struct wm8960_data pdata;
 };
 
@@ -1154,7 +1161,7 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
 {
 	struct wm8960_data *pdata = dev_get_platdata(&i2c->dev);
 	struct wm8960_priv *wm8960;
-	int ret;
+	int ret, i;
 
 	wm8960 = devm_kzalloc(&i2c->dev, sizeof(struct wm8960_priv),
 			      GFP_KERNEL);
@@ -1165,6 +1172,23 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
 	if (IS_ERR(wm8960->mclk)) {
 		if (PTR_ERR(wm8960->mclk) == -EPROBE_DEFER)
 			return -EPROBE_DEFER;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(wm8960->supplies); i++)
+		wm8960->supplies[i].supply = wm8960_supply_names[i];
+
+	ret = devm_regulator_bulk_get(&i2c->dev, ARRAY_SIZE(wm8960->supplies),
+				 wm8960->supplies);
+	if (ret != 0) {
+		dev_err(&i2c->dev, "Failed to request supplies: %d\n", ret);
+		return -EPROBE_DEFER;
+	}
+
+	ret = regulator_bulk_enable(ARRAY_SIZE(wm8960->supplies),
+				    wm8960->supplies);
+	if (ret != 0) {
+		dev_err(&i2c->dev, "Failed to enable supplies: %d\n", ret);
+		return -EPROBE_DEFER;
 	}
 
 	wm8960->regmap = devm_regmap_init_i2c(i2c, &wm8960_regmap);

@@ -87,8 +87,8 @@
 		reg_audio: regulator@2 {
 			compatible = "regulator-fixed";
 			reg = <2>;
-			regulator-name = "wm8962-supply";
-			gpio = <&gpio4 10 0>;
+			regulator-name = "wm8960-supply";
+			gpio = <&gpio2 9 0>;
 			enable-active-high;
 		};
 
@@ -649,6 +649,7 @@
 		reg = <0x1a>;
 		clocks = <&clks IMX6QDL_CLK_CKO>;
 		clock-names = "mclk";
+		VAUD-supply = <&reg_audio>;
 		wlf,shared-lrclk;
 	};
 };
@@ -692,6 +693,7 @@
 				MX6QDL_PAD_ENET_RXD0__XTALOSC_OSC32K_32K_OUT 0x100b1
 				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03 0x100b1	/* ACC INT, FXLS8471 */
 				MX6QDL_PAD_GPIO_3__CCM_CLKO2	0x130b0
+				MX6QDL_PAD_SD4_DAT1__GPIO2_IO09	0x80000000 	/* PERI_PWREN */
 			>;
 		};
 
