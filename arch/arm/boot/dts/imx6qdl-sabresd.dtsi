@@ -594,22 +594,6 @@
 		};
 	};
 
-	ov564x_mipi: ov564x_mipi@3c { /* i2c2 driver */
-		compatible = "ovti,ov564x_mipi";
-		reg = <0x3c>;
-		clocks = <&clks 201>;
-		clock-names = "csi_mclk";
-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
-		AVDD-supply = <&vgen3_reg>;  /* 2.8v, rev C board is VGEN3
-						rev B board is VGEN5 */
-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
-		pwn-gpios = <&gpio1 19 1>;   /* active low: SD1_CLK */
-		rst-gpios = <&gpio1 20 0>;   /* active high: SD1_DAT2 */
-		csi_id = <1>;
-		mclk = <24000000>;
-		mclk_source = <0>;
-	};
-
 	egalax_ts@04 {
 		compatible = "eeti,egalax_ts";
 		reg = <0x04>;
@@ -657,6 +641,23 @@
 		VAUD-supply = <&reg_audio>;
 		wlf,shared-lrclk;
 	};
+
+	ov564x_mipi: ov564x_mipi@3c { /* i2c2 driver */
+		compatible = "ovti,ov564x_mipi";
+		reg = <0x3c>;
+		clocks = <&clks IMX6QDL_CLK_CKO2>;
+		clock-names = "csi_mclk";
+		DOVDD-supply = <&reg_audio>; /* 1.8v */
+		AVDD-supply = <&reg_audio>;  /* 2.8v, on rev C board is VGEN3,
+						on rev B board is VGEN5 */
+		DVDD-supply = <&reg_audio>;  /* 1.5v*/
+		pwn-gpios = <&gpio5 17 1>;   /* active low: SD1_DAT0 */
+		rst-gpios = <&gpio4 10 0>;   /* active high: KEY_COL2 */
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
+
 };
 
 &iomuxc {
@@ -699,6 +700,8 @@
 				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03 0x100b1	/* ACC INT, FXLS8471 */
 				MX6QDL_PAD_GPIO_3__CCM_CLKO2	0x130b0
 				MX6QDL_PAD_SD4_DAT1__GPIO2_IO09	0x80000000 	/* PERI_PWREN */
+				MX6QDL_PAD_KEY_COL2__GPIO4_IO10	0x80000000 	/* CSI_RST */
+				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x80000000	/* CSI_PWDN */
 			>;
 		};
 
