@@ -481,6 +481,11 @@
 		reg = <0x50>;
 	};
 
+	lm75@48 {
+		compatible = "lm75";
+		reg = <0x48>;
+	};
+
 	max11801@48 {
 		compatible = "maxim,max11801";
 		reg = <0x48>;
