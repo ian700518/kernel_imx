@@ -593,7 +593,7 @@ static struct i2c_driver ov5645_i2c_driver = {
 
 static void ov5645_standby(s32 enable)
 {
-	if (enable)
+	if (!enable)
 		gpio_set_value(pwn_gpio, 1);
 	else
 		gpio_set_value(pwn_gpio, 0);
