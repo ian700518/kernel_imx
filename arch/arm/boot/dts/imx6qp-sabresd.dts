@@ -72,10 +72,6 @@
 	prefetch;
 };
 
-&ov564x {
-	DOVDD-supply = <&sw4_reg>; /* 1.8v */
-};
-
 &ov564x_mipi {
 	DOVDD-supply = <&sw4_reg>; /* 1.8v */
 };

@@ -387,8 +387,9 @@
 };
 
 &cpu0 {
-	arm-supply = <&sw1a_reg>;
+/*	arm-supply = <&sw1a_reg>;
 	soc-supply = <&sw1c_reg>;
+*/
 };
 
 &clks {
@@ -449,37 +450,6 @@
 		/*interrupt-parent = <&gpio3>;
 		interrupts = <16 1>;*/
 	};
-
-
-	mma8451@1c {
-		compatible = "fsl,mma8451";
-		reg = <0x1c>;
-		position = <0>;
-		vdd-supply = <&reg_sensor>;
-		vddio-supply = <&reg_sensor>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <18 8>;
-		interrupt-route = <1>;
-	};
-
-	ov564x: ov564x@3c {
-		compatible = "ovti,ov564x";
-		reg = <0x3c>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu1_2>;
-		clocks = <&clks IMX6QDL_CLK_CKO>;
-		clock-names = "csi_mclk";
-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
-		AVDD-supply = <&vgen3_reg>;  /* 2.8v, on rev C board is VGEN3,
-						on rev B board is VGEN5 */
-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
-		pwn-gpios = <&gpio1 16 1>;   /* active low: SD1_DAT0 */
-		rst-gpios = <&gpio1 17 0>;   /* active high: SD1_DAT1 */
-		csi_id = <0>;
-		mclk = <24000000>;
-		mclk_source = <0>;
-		status = "disabled";
-	};
 };
 
 &i2c2 {
@@ -505,14 +475,6 @@
 	lm75@48 {
 		compatible = "lm75";
 		reg = <0x48>;
-	};
-
-	max11801@48 {
-		compatible = "maxim,max11801";
-		reg = <0x48>;
-		interrupt-parent = <&gpio3>;
-		interrupts = <26 2>;
-		work-mode = <1>;/*DCM mode*/
 	};
 
 	pmic: pfuze100@08 {
@@ -615,14 +577,6 @@
 		};
 	};
 
-	egalax_ts@04 {
-		compatible = "eeti,egalax_ts";
-		reg = <0x04>;
-		interrupt-parent = <&gpio6>;
-		interrupts = <8 2>;
-		wakeup-gpios = <&gpio6 8 0>;
-	};
-
 };
 
 &i2c3 {
@@ -636,14 +590,6 @@
 		reg = <0x60>;
 		position = <3>;
 		VSENSOR-supply = <&reg_sensor>;
-	};
-
-	egalax_ts@04 {
-		compatible = "eeti,egalax_ts";
-		reg = <0x04>;
-		interrupt-parent = <&gpio6>;
-		interrupts = <7 2>;
-		wakeup-gpios = <&gpio6 7 0>;
 	};
 
 	codec: wm8960@1a {
