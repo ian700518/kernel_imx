@@ -47,6 +47,8 @@ struct imx_wm8960_data {
 };
 
 struct imx_priv {
+	int aud_pa_on_gpio;
+	int aud_pa_active_flag;
 	int hp_set_gpio;
 	int hp_active_low;
 	struct snd_kcontrol *headset_kctl;
@@ -692,6 +694,15 @@ audmux_bypass:
 	}
 
 	priv->snd_card = data->card.snd_card;
+
+	priv->aud_pa_on_gpio = of_get_named_gpio_flags(pdev->dev.of_node, "aud-pa-on-gpios", 0,
+			(enum of_gpio_flags *)&priv->aud_pa_active_flag);
+	if (gpio_is_valid(priv->aud_pa_on_gpio)) {
+		ret = gpio_request_one(priv->aud_pa_on_gpio, GPIOF_OUT_INIT_LOW,
+				"aud-pa-on-gpios");
+		if (ret)
+			pr_warn("failed to request aud-pa-on gpio\n");
+	}
 
 	priv->hp_set_gpio = of_get_named_gpio_flags(pdev->dev.of_node, "hp-det-gpios", 0,
 			(enum of_gpio_flags *)&priv->hp_active_low);
