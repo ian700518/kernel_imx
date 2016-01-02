@@ -200,6 +200,7 @@
 			"CPU-Capture", "Capture";
 		mux-int-port = <2>;
 		mux-ext-port = <5>;
+		aud-pa-on-gpios = <&gpio5 15 0>;
 	};
 
 	sound-hdmi {
@@ -239,26 +240,6 @@
 		int_clk = <0>;
 		late_init = <0>;
 		status = "disabled";
-	};
-
-	mxcfb4: fb@3 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
-		interface_pix_fmt = "RGB666";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
-	};
-
-	lcd@0 {
-		compatible = "fsl,lcd";
-		ipu_id = <0>;
-		disp_id = <0>;
-		default_ifmt = "RGB565";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu1>;
-		status = "okay";
 	};
 
 	mxcfb4: fb@3 {
@@ -661,6 +642,7 @@
 				MX6QDL_PAD_KEY_COL2__GPIO4_IO10	0x80000000 	/* CSI_RST */
 				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x80000000	/* CSI_PWDN */
 				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26	0x80000000	/* GPS_PWREN */
+				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x80000000	/* AUD_PA_ON */
 			>;
 		};
 
