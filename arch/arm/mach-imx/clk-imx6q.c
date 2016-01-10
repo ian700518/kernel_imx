@@ -862,7 +862,10 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	 * is widely used by imx6q board designs to clock audio codec.
 	 */
 	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO2_SEL], clk[IMX6QDL_CLK_OSC]);
+
+	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO1_SEL], clk[IMX6QDL_CLK_PLL4_AUDIO_DIV]);
 	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO], clk[IMX6QDL_CLK_CKO2]);
+	imx_clk_set_rate(clk[IMX6QDL_CLK_CKO], 12288000);
 
 	/* Audio-related clocks configuration */
 	imx_clk_set_parent(clk[IMX6QDL_CLK_SPDIF_SEL], clk[IMX6QDL_CLK_PLL3_PFD3_454M]);
