@@ -644,6 +644,7 @@
 				MX6QDL_PAD_KEY_COL2__GPIO4_IO10	0x80000000 	/* CSI_RST */
 				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x80000000	/* CSI_PWDN */
 				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26	0x80000000	/* GPS_PWREN */
+				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27	0x80000000	/* GPS_RST */
 				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x80000000	/* AUD_PA_ON */
 			>;
 		};
@@ -801,6 +802,13 @@
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT10__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_CSI0_DAT11__UART1_RX_DATA	0x1b0b1
+			>;
+		};
+
+		pinctrl_uart3: uart3grp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
+				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
 			>;
 		};
 
@@ -1018,6 +1026,13 @@
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1>;
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>;
+	pinctrl-assert-gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>, <&gpio4 27 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
