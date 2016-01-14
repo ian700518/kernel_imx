@@ -165,6 +165,13 @@
 		};
 	};
 
+	gps {
+		compatible = "ublox,gps";
+		gps-supply = <&reg_gps>;
+		gps-rst-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
 	sound {
 		compatible = "fsl,imx6ul-evk-wm8960",
 			   "fsl,imx-audio-wm8960";
@@ -1034,7 +1041,6 @@
 &uart3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
-	pinctrl-assert-gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>, <&gpio4 27 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
