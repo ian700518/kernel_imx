@@ -545,6 +545,11 @@ config UID_CPUTIME
 	help
 	  Per UID based cpu time statistics exported to /proc/uid_cputime
 
+config UBLOX_GPS
+	tristate "Ublox GPS module"
+	help
+	  Ublox GPS module on TVBS
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
