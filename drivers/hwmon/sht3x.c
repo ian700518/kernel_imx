@@ -1,0 +1,226 @@
+/* Sensirion SHT3x-DIS humidity and temperature sensor driver.
+ * The SHT3x comes in many different versions, this driver is for the
+ * I2C version only.
+ *
+ * Copyright (C) 2015 Sensirion AG, Switzerland
+ * Author: David Frey <david.frey@sensirion.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
+
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/slab.h>
+#include <linux/i2c.h>
+#include <linux/hwmon.h>
+#include <linux/hwmon-sysfs.h>
+#include <linux/err.h>
+#include <linux/delay.h>
+#include "sht3x.h"
+
+/* commands */
+static const unsigned char sht3x_cmd_measure_blocking[]    = { 0x2c, 0x06 };
+static const unsigned char sht3x_cmd_measure_nonblocking[] = { 0x24, 0x00 };
+static const unsigned char sht3x_cmd_read_status_reg[] = { 0xF3, 0x2D };
+
+/* delay for non-blocking i2c command, in us */
+#define SHT3X_NONBLOCKING_WAIT_TIME  15000
+
+#define SHT3X_CMD_LENGTH      2
+#define SHT3X_RESPONSE_LENGTH 6
+
+struct sht3x_data {
+	struct i2c_client *client;
+	struct mutex update_lock;
+	bool valid;
+	unsigned long last_updated; /* in jiffies */
+
+	const unsigned char *command;
+
+	struct sht3x_platform_data setup;
+
+	int temperature; /* 1000 * temperature in dgr C */
+	int humidity; /* 1000 * relative humidity in %RH */
+};
+
+static int sht3x_update_values(struct i2c_client *client,
+			       struct sht3x_data *data,
+			       char *buf, int bufsize)
+{
+	int ret = i2c_master_send(client, data->command, SHT3X_CMD_LENGTH);
+	if (ret != SHT3X_CMD_LENGTH) {
+		dev_err(&client->dev, "failed to send command: %d\n", ret);
+		return ret < 0 ? ret : -EIO;
+	}
+
+	/*
+	 * In blocking mode (clock stretching mode) the I2C bus
+	 * is blocked for other traffic, thus the call to i2c_master_recv()
+	 * will wait until the data is ready. For non blocking mode, we
+	 * have to wait ourselves.
+	 */
+	if (!data->setup.blocking_io)
+		usleep_range(SHT3X_NONBLOCKING_WAIT_TIME,
+			     SHT3X_NONBLOCKING_WAIT_TIME + 1000);
+
+	ret = i2c_master_recv(client, buf, bufsize);
+	if (ret != bufsize) {
+		dev_err(&client->dev, "failed to read values: %d\n", ret);
+		return ret < 0 ? ret : -EIO;
+	}
+
+	return 0;
+}
+
+/* sysfs attributes */
+static struct sht3x_data *sht3x_update_client(struct device *dev)
+{
+	struct sht3x_data *data = dev_get_drvdata(dev);
+	struct i2c_client *client = data->client;
+	unsigned char buf[SHT3X_RESPONSE_LENGTH];
+	int val;
+	int ret = 0;
+
+	mutex_lock(&data->update_lock);
+
+	if (time_after(jiffies, data->last_updated + HZ / 10) || !data->valid) {
+		ret = sht3x_update_values(client, data, buf, sizeof(buf));
+		if (ret)
+			goto out;
+
+		/*
+		 * From datasheet:
+		 * T = -45 + 175 * ST / 2^16
+		 * RH = 100 * SRH / 2^16
+		 *
+		 * Adapted for integer fixed point (3 digit) arithmetic.
+		 */
+		val = be16_to_cpup((__be16 *)buf);
+		data->temperature = ((21875 * val) >> 13) - 45000;
+		val = be16_to_cpup((__be16 *)(buf + 3));
+		data->humidity = ((12500 * val) >> 13);
+
+		data->last_updated = jiffies;
+		data->valid = true;
+	}
+
+out:
+	mutex_unlock(&data->update_lock);
+
+	return ret == 0 ? data : ERR_PTR(ret);
+}
+
+static ssize_t temp1_input_show(struct device *dev,
+				struct device_attribute *attr,
+				char *buf)
+{
+	struct sht3x_data *data = sht3x_update_client(dev);
+	if (IS_ERR(data))
+		return PTR_ERR(data);
+
+	return sprintf(buf, "%d\n", data->temperature);
+}
+
+static ssize_t humidity1_input_show(struct device *dev,
+				    struct device_attribute *attr, char *buf)
+{
+	struct sht3x_data *data = sht3x_update_client(dev);
+	if (IS_ERR(data))
+		return PTR_ERR(data);
+
+	return sprintf(buf, "%d\n", data->humidity);
+}
+
+static DEVICE_ATTR_RO(temp1_input);
+static DEVICE_ATTR_RO(humidity1_input);
+
+static struct attribute *sht3x_attrs[] = {
+	&dev_attr_temp1_input.attr,
+	&dev_attr_humidity1_input.attr,
+	NULL
+};
+
+ATTRIBUTE_GROUPS(sht3x);
+
+static void sht3x_select_command(struct sht3x_data *data)
+{
+	data->command = data->setup.blocking_io ?
+			sht3x_cmd_measure_blocking :
+			sht3x_cmd_measure_nonblocking;
+}
+
+static int sht3x_probe(struct i2c_client *client,
+		       const struct i2c_device_id *id)
+{
+	int ret;
+	char status_reg[2];
+	struct sht3x_data *data;
+	struct device *hwmon_dev;
+	struct i2c_adapter *adap = client->adapter;
+	struct device *dev = &client->dev;
+
+	if (!i2c_check_functionality(adap, I2C_FUNC_I2C)) {
+		dev_err(dev, "plain i2c transactions not supported\n");
+		return -ENODEV;
+	}
+
+	ret = i2c_master_send(client, sht3x_cmd_read_status_reg, SHT3X_CMD_LENGTH);
+	if (ret != SHT3X_CMD_LENGTH) {
+		dev_err(dev, "could not send read_status_reg command: %d\n", ret);
+		return ret < 0 ? ret : -ENODEV;
+	}
+	ret = i2c_master_recv(client, status_reg, sizeof(status_reg));
+	if (ret != sizeof(status_reg)) {
+		dev_err(dev, "could not read status register: %d\n", ret);
+		return -ENODEV;
+	}
+
+	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
+	if (!data)
+		return -ENOMEM;
+
+	data->setup.blocking_io = false;
+	data->client = client;
+
+	if (client->dev.platform_data)
+		data->setup = *(struct sht3x_platform_data *)dev->platform_data;
+	sht3x_select_command(data);
+	mutex_init(&data->update_lock);
+
+	hwmon_dev = devm_hwmon_device_register_with_groups(dev,
+							   client->name,
+							   data,
+							   sht3x_groups);
+	if (IS_ERR(hwmon_dev))
+		dev_dbg(dev, "unable to register hwmon device\n");
+
+	return PTR_ERR_OR_ZERO(hwmon_dev);
+}
+
+/* device ID table */
+static const struct i2c_device_id sht3x_id[] = {
+	{ "sht3x", 0 },
+	{ }
+};
+MODULE_DEVICE_TABLE(i2c, sht3x_id);
+
+static struct i2c_driver sht3x_i2c_driver = {
+	.driver.name  = "sht3x",
+	.probe        = sht3x_probe,
+	.id_table     = sht3x_id,
+};
+
+module_i2c_driver(sht3x_i2c_driver);
+
+MODULE_AUTHOR("David Frey <david.frey@sensirion.com>");
+MODULE_DESCRIPTION("Sensirion SHT3x humidity and temperature sensor driver");
+MODULE_LICENSE("GPL");
