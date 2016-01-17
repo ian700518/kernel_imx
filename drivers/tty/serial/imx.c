@@ -623,7 +623,11 @@ static void imx_start_tx(struct uart_port *port)
 	writel(temp | USR2_ORE, sport->port.membase + USR2);
 
 	temp = readl(sport->port.membase + UCR4);
+#if 0	/* TODO: temporarily disable OVERRUN EN */
 	temp |= UCR4_OREN;
+#else
+	temp &= ~UCR4_OREN;
+#endif
 	writel(temp, sport->port.membase + UCR4);
 
 	if (!sport->dma_is_enabled) {
