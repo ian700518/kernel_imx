@@ -150,19 +150,6 @@
 			linux,code = <KEY_POWER>;
 		};
 
-		volume-up {
-			label = "Volume Up";
-			gpios = <&gpio1 4 1>;
-			gpio-key;
-			linux,code = <KEY_VOLUMEUP>;
-		};
-
-		volume-down {
-			label = "Volume Down";
-			gpios = <&gpio1 5 1>;
-			gpio-key;
-			linux,code = <KEY_VOLUMEDOWN>;
-		};
 	};
 
 	gps {
@@ -423,14 +410,20 @@
 		compatible = "fsl,fxas2100x";
 		reg = <0x20>;
 		position = <3>;
+		/*
+		interrupt-parent = <&gpio5>;
+		interrupts = <25 8>;
+		shared-interrupt;
+		*/
 	};
 
 	fxls8471@1e {
 		compatible = "fsl,fxls8471";
 		reg = <0x1e>;
 		position = <0>;
-		interrupt-parent = <&gpio6>;
-		interrupts = <0 8>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <25 8>;
+		/*shared-interrupt;*/
 	};
 
 
@@ -438,8 +431,11 @@
 		compatible = "fsl,mag3110";
 		reg = <0x0e>;
 		position = <1>;
-		/*interrupt-parent = <&gpio3>;
-		interrupts = <16 1>;*/
+		/*
+		interrupt-parent = <&gpio5>;
+		interrupts = <25 8>;
+		shared-interrupt;
+		*/
 	};
 };
 
@@ -581,6 +577,9 @@
 		reg = <0x60>;
 		position = <3>;
 		VSENSOR-supply = <&reg_sensor>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <25 8>;
+		shared-interrupt;
 	};
 
 	codec: wm8960@1a {
@@ -646,7 +645,7 @@
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
 				MX6QDL_PAD_EIM_DA14__GPIO3_IO14 0x80000000	/* SD2 DET: microSD */
 				MX6QDL_PAD_ENET_RXD0__XTALOSC_OSC32K_32K_OUT 0x100b1
-				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03 0x100b1	/* ACC INT, FXLS8471 */
+				MX6QDL_PAD_CSI0_DAT7__GPIO5_IO25 0x100b1	/* ACC INT, FXLS8471 */
 				MX6QDL_PAD_GPIO_3__CCM_CLKO2	0x130b0		/* MIPI Camera */
 				MX6QDL_PAD_SD4_DAT1__GPIO2_IO09	0x80000000 	/* PERI_PWREN */
 				MX6QDL_PAD_KEY_COL2__GPIO4_IO10	0x80000000 	/* CSI_RST */
@@ -706,7 +705,6 @@
 		pinctrl_gpio_keys: gpio_keysgrp {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x80000000
-				MX6QDL_PAD_GPIO_4__GPIO1_IO04  0x80000000
 			>;
 		};
 
