@@ -329,9 +329,9 @@ static ssize_t fxls8471_enable_store(struct device *dev,
 	if (!ret) {
 		atomic_set(&pdata->active, enable);
 		if (enable)
-			printk(KERN_INFO "mma enable setting actived\n");
+			printk(KERN_INFO "fxls8471 enable setting actived\n");
 		else
-			printk(KERN_INFO "mma enable setting standby\n");
+			printk(KERN_INFO "fxls8471 enable setting standby\n");
 	}
 	return count;
 }

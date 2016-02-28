@@ -357,7 +357,7 @@ static ssize_t fxas2100x_enable_store(struct device *dev,
 	if (!ret) {
 		atomic_set(&pdata->active, enable);
 		atomic_set(&pdata->active_poll, enable);
-		dev_err(dev, "mma enable setting active \n");
+		dev_err(dev, "fxas2100x enable setting active \n");
 	}
 	return count;
 }

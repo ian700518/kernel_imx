@@ -543,7 +543,7 @@ static ssize_t mma8x5x_enable_store(struct device *dev,
 							pdata->fifo_timeout, 0);
 				mma8x5x_fifo_interrupt(client, 1);
 			}
-			printk(KERN_INFO"mma enable setting active\n");
+			printk(KERN_INFO"mma8x5x enable setting active\n");
 		}
 	} else if (enable == 0 && pdata->active == MMA_ACTIVED) {
 		val = i2c_smbus_read_byte_data(client, MMA8X5X_CTRL_REG1);
