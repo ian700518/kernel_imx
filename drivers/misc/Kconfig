@@ -550,6 +550,11 @@ config UBLOX_GPS
 	help
 	  Ublox GPS module on TVBS
 
+config LEDS_TVBS
+	tristate "Control LEDS on TVBS board"
+	help
+	  Control LEDS on TVBS
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
