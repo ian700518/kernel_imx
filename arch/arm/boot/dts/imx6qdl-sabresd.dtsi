@@ -159,6 +159,13 @@
 		status = "okay";
 	};
 
+	leds {
+		compatible = "led-tvbs";
+		led-red-gpios = <&gpio4 16 GPIO_ACTIVE_HIGH>;
+		led-grn-gpios = <&gpio4 19 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
 	sound {
 		compatible = "fsl,imx6ul-evk-wm8960",
 			   "fsl,imx-audio-wm8960";
@@ -670,6 +677,8 @@
 				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27	0x80000000	/* GPS_RST */
 				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x80000000	/* AUD_PA_ON */
 				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0x80000000	/* UHF_CODEC_SEL, H: UHF, L: normal */
+				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19		0x80000000	/* LED_GRN */
+				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16	0x80000000	/* LED_RED */
 			>;
 		};
 

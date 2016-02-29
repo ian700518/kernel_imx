@@ -59,4 +59,4 @@ obj-y				+= mic/
 obj-$(CONFIG_GENWQE)		+= genwqe/
 obj-$(CONFIG_UID_CPUTIME)       += uid_cputime.o
 obj-$(CONFIG_UBLOX_GPS)		+= gps.o
-obj-$(CONFIG_LED_TVBS)		+= leds-tvbs.o
+obj-$(CONFIG_LEDS_TVBS)		+= leds-tvbs.o
