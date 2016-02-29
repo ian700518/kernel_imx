@@ -25,7 +25,15 @@
 #include <linux/hwmon-sysfs.h>
 #include <linux/err.h>
 #include <linux/delay.h>
+#include <linux/input-polldev.h>
 #include "sht3x.h"
+
+#define ABS_HUMIDITY				ABS_MISC
+#define SHT3X_ACTIVED    		 		1
+#define SHT3X_STANDBY 				0
+#define POLL_INTERVAL_MAX			500
+#define POLL_INTERVAL				100
+#define POLL_INTERVAL_MIN			1
 
 /* commands */
 static const unsigned char sht3x_cmd_measure_blocking[]    = { 0x2c, 0x06 };
@@ -40,7 +48,9 @@ static const unsigned char sht3x_cmd_read_status_reg[] = { 0xF3, 0x2D };
 
 struct sht3x_data {
 	struct i2c_client *client;
+	struct input_polled_dev *poll_dev;
 	struct mutex update_lock;
+	int active;
 	bool valid;
 	unsigned long last_updated; /* in jiffies */
 
@@ -82,9 +92,8 @@ static int sht3x_update_values(struct i2c_client *client,
 }
 
 /* sysfs attributes */
-static struct sht3x_data *sht3x_update_client(struct device *dev)
+static struct sht3x_data *sht3x_update_client(struct sht3x_data *data)
 {
-	struct sht3x_data *data = dev_get_drvdata(dev);
 	struct i2c_client *client = data->client;
 	unsigned char buf[SHT3X_RESPONSE_LENGTH];
 	int val;
@@ -119,43 +128,83 @@ out:
 	return ret == 0 ? data : ERR_PTR(ret);
 }
 
-static ssize_t temp1_input_show(struct device *dev,
-				struct device_attribute *attr,
-				char *buf)
+static ssize_t sht3x_enable_show(struct device *dev,
+				   struct device_attribute *attr, char *buf)
 {
-	struct sht3x_data *data = sht3x_update_client(dev);
-	if (IS_ERR(data))
-		return PTR_ERR(data);
+	int val;
 
-	return sprintf(buf, "%d\n", data->temperature);
+	struct input_polled_dev *poll_dev = dev_get_drvdata(dev);
+	struct sht3x_data *pdata = (struct sht3x_data *)(poll_dev->private);
+	mutex_lock(&pdata->update_lock);
+	val = pdata->active;
+	mutex_unlock(&pdata->update_lock);
+
+	return sprintf(buf, "%d\n", val);
 }
 
-static ssize_t humidity1_input_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
+static ssize_t sht3x_enable_store(struct device *dev,
+				    struct device_attribute *attr,
+				    const char *buf, size_t count)
 {
-	struct sht3x_data *data = sht3x_update_client(dev);
-	if (IS_ERR(data))
-		return PTR_ERR(data);
+	int ret, enable;
+	u8 val;
+	struct input_polled_dev *poll_dev = dev_get_drvdata(dev);
+	struct sht3x_data *pdata = (struct sht3x_data *)(poll_dev->private);
 
-	return sprintf(buf, "%d\n", data->humidity);
+	enable = simple_strtoul(buf, NULL, 10);
+	mutex_lock(&pdata->update_lock);
+	if (enable && pdata->active == SHT3X_STANDBY) {
+		pdata->active = SHT3X_ACTIVED;
+		printk("sht3x set active\n");
+	} else if (!enable && pdata->active == SHT3X_ACTIVED) {
+		pdata->active = SHT3X_STANDBY;
+		printk("sht3x set inactive\n");
+	}
+	mutex_unlock(&pdata->update_lock);
+
+	return count;
 }
-
-static DEVICE_ATTR_RO(temp1_input);
-static DEVICE_ATTR_RO(humidity1_input);
+static DEVICE_ATTR(enable, S_IWUSR | S_IRUGO, sht3x_enable_show, sht3x_enable_store);
 
 static struct attribute *sht3x_attrs[] = {
-	&dev_attr_temp1_input.attr,
-	&dev_attr_humidity1_input.attr,
+	&dev_attr_enable.attr,
 	NULL
 };
 
-ATTRIBUTE_GROUPS(sht3x);
+static const struct attribute_group sht3x_attr_group = {
+	.attrs = sht3x_attrs,
+};
 
 static void sht3x_select_command(struct sht3x_data *data)
 {
 	data->command = data->setup.blocking_io ?
 			sht3x_cmd_measure_blocking :
 			sht3x_cmd_measure_nonblocking;
+}
+
+static void report_abs(struct sht3x_data *pdata)
+{
+	struct input_dev *idev;
+	int humidity = 0;
+	short temperature = 0;
+
+	mutex_lock(&pdata->update_lock);
+	if (pdata->active == SHT3X_STANDBY)
+		goto out;
+	idev = pdata->poll_dev->input;
+	input_report_abs(idev, ABS_HUMIDITY, pdata->humidity);
+//	input_report_abs(idev, ABS_TEMPTERAURE, data->temperature);
+	input_sync(idev);
+out:
+	mutex_unlock(&pdata->update_lock);
+}
+
+static void sht3x_dev_poll(struct input_polled_dev *dev)
+{
+	struct sht3x_data *pdata = (struct sht3x_data *)dev->private;
+
+	sht3x_update_client(pdata);
+	report_abs(pdata);
 }
 
 static int sht3x_probe(struct i2c_client *client,
@@ -167,6 +216,7 @@ static int sht3x_probe(struct i2c_client *client,
 	struct device *hwmon_dev;
 	struct i2c_adapter *adap = client->adapter;
 	struct device *dev = &client->dev;
+	struct input_dev *idev;
 
 	if (!i2c_check_functionality(adap, I2C_FUNC_I2C)) {
 		dev_err(dev, "plain i2c transactions not supported\n");
@@ -190,20 +240,52 @@ static int sht3x_probe(struct i2c_client *client,
 
 	data->setup.blocking_io = false;
 	data->client = client;
+	i2c_set_clientdata(client, data);
 
 	if (client->dev.platform_data)
 		data->setup = *(struct sht3x_platform_data *)dev->platform_data;
 	sht3x_select_command(data);
 	mutex_init(&data->update_lock);
 
-	hwmon_dev = devm_hwmon_device_register_with_groups(dev,
-							   client->name,
-							   data,
-							   sht3x_groups);
-	if (IS_ERR(hwmon_dev))
-		dev_dbg(dev, "unable to register hwmon device\n");
+	data->poll_dev = input_allocate_polled_device();
+	if (!data->poll_dev) {
+		ret = -ENOMEM;
+		dev_err(&client->dev, "alloc poll device failed!\n");
+		goto err_alloc_data;
+	}
+	data->poll_dev->poll = sht3x_dev_poll;
+	data->poll_dev->private = data;
+	data->poll_dev->poll_interval = POLL_INTERVAL;
+	data->poll_dev->poll_interval_min = POLL_INTERVAL_MIN;
+	data->poll_dev->poll_interval_max = POLL_INTERVAL_MAX;
+	idev = data->poll_dev->input;
+	idev->name = "sht3x";
+	idev->id.bustype = BUS_I2C;
+	idev->evbit[0] = BIT_MASK(EV_ABS);
 
-	return PTR_ERR_OR_ZERO(hwmon_dev);
+//	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+	input_set_abs_params(idev, ABS_HUMIDITY, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+	ret = input_register_polled_device(data->poll_dev);
+	if (ret) {
+		dev_err(&client->dev, "register poll device failed!\n");
+		goto error_free_poll_dev;
+	}
+	ret = sysfs_create_group(&idev->dev.kobj, &sht3x_attr_group);
+	if (ret) {
+		dev_err(&client->dev, "create device file failed!\n");
+		ret = -EINVAL;
+		goto error_register_polled_device;
+	}
+	printk("sht3x device driver probe successfully");
+	return 0;
+error_register_polled_device:
+	input_unregister_polled_device(data->poll_dev);
+error_free_poll_dev:
+	input_free_polled_device(data->poll_dev);
+err_alloc_data:
+	kfree(data);
+err_out:
+	return ret;
 }
 
 /* device ID table */
