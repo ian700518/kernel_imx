@@ -572,6 +572,15 @@
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
 
+	sht3x@44 {
+		compatible = "sensirion,sht3x";
+		reg = <0x44>;
+		VSENSOR-supply = <&reg_sensor>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <25 8>;
+		shared-interrupt;
+	};
+
 	mpl3115@60 {
 		compatible = "fsl,mpl3115";
 		reg = <0x60>;
