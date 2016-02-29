@@ -354,6 +354,13 @@
 		reset-delay-us = <50>;
 		#reset-cells = <0>;
 	};
+
+	gpio_pir: gpio-pir {
+		compatible = "gpio-pir";
+		pinctrl-0 = <&pinctrl_gpio_pir>;
+		pinctrl-names = "default";
+		alarm-gpios = <&gpio6 0 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &audmux {
@@ -714,6 +721,12 @@
 		pinctrl_gpio_keys: gpio_keysgrp {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x80000000
+			>;
+		};
+
+		pinctrl_gpio_pir: gpio_pirgrp {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT14__GPIO6_IO00 0x80000000
 			>;
 		};
 
