@@ -1102,6 +1102,7 @@
 	bus-width = <4>;
 	no-1-8-v;
 	wifi-host;
+	pm-ignore-notify;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
 	status = "okay";
