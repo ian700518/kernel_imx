@@ -153,8 +153,16 @@
 			label = "UHF Button";
 			gpios = <&gpio4 28 0>;
 			gpio-key,wakeup;
-			linux,code = <KEYCODE_YEN>;
+			linux,code = <KEY_YEN>;
 		};
+
+
+		pir_key {
+				label = "PIR Button";
+				gpios = <&gpio6 0 GPIO_ACTIVE_LOW>;
+				gpio-key,wakeup;
+				linux,code = <KEY_HENKAN>;
+			};
 
 	};
 
@@ -368,12 +376,6 @@
 		#reset-cells = <0>;
 	};
 
-	gpio_pir: gpio-pir {
-		compatible = "gpio-pir";
-		pinctrl-0 = <&pinctrl_gpio_pir>;
-		pinctrl-names = "default";
-		alarm-gpios = <&gpio6 0 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &audmux {
@@ -737,14 +739,10 @@
 			fsl,pins = <
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x1b0b0
                 MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28 0x80000000
-			>;
-		};
-
-		pinctrl_gpio_pir: gpio_pirgrp {
-			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT14__GPIO6_IO00 0x80000000
 			>;
 		};
+
 
 		pinctrl_hdmi_cec: hdmicecgrp {
 			fsl,pins = <
