@@ -775,6 +775,7 @@ static int ldb_probe(struct platform_device *pdev)
 			pr_warn("failed to request LCD REV gpio\n");
 	}
 
+#if 0
 	blten_gpio = of_get_named_gpio(np, "blten-gpios", 0);
 	if (gpio_is_valid(blten_gpio)) {
 		ret = gpio_request_one(blten_gpio, GPIOF_OUT_INIT_HIGH,
@@ -782,6 +783,7 @@ static int ldb_probe(struct platform_device *pdev)
 		if (ret)
 			pr_warn("failed to request backlight enable gpio\n");
 	}
+#endif
 
 	ext_ref = of_property_read_bool(np, "ext-ref");
 	if (!ext_ref && ldb_info->ext_bgref_cap)
