@@ -85,6 +85,12 @@ static const struct i2c_device_id wm831x_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, wm831x_i2c_id);
 
+static const struct of_device_id wm8623_of_match[] = {
+       { .compatible = "wlf,wm8623", },
+       { }
+};
+MODULE_DEVICE_TABLE(of, wm8623_of_match);
+
 static const struct dev_pm_ops wm831x_pm_ops = {
 	.suspend = wm831x_i2c_suspend,
 	.poweroff = wm831x_i2c_poweroff,
@@ -95,6 +101,7 @@ static struct i2c_driver wm831x_i2c_driver = {
 		.name = "wm831x",
 		.owner = THIS_MODULE,
 		.pm = &wm831x_pm_ops,
+		.of_match_table = wm8623_of_match,
 	},
 	.probe = wm831x_i2c_probe,
 	.remove = wm831x_i2c_remove,
