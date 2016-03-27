@@ -23,6 +23,226 @@
 
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/pdata.h>
+#include <linux/mfd/wm831x/regulator.h>
+#include <linux/mfd/wm831x/gpio.h>
+#include <linux/regulator/machine.h>
+
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+// LDO bypass
+// 1.3, 1.3. 1.5
+#define WM831X_DC1_ON_CONFIG_VAL            (0x40<<WM831X_DC1_ON_VSEL_SHIFT)
+#define WM831X_DC2_ON_CONFIG_VAL            (0x40<<WM831X_DC2_ON_VSEL_SHIFT)
+#define WM831X_DC3_ON_CONFIG_VAL            (0x1A<<WM831X_DC3_ON_VSEL_SHIFT)
+#else
+// 1.375, 1.375. 1.5
+
+#define WM831X_DC1_ON_CONFIG_VAL            (0x44<<WM831X_DC1_ON_VSEL_SHIFT)
+#define WM831X_DC2_ON_CONFIG_VAL            (0x44<<WM831X_DC2_ON_VSEL_SHIFT)
+#define WM831X_DC3_ON_CONFIG_VAL            (0x1A<<WM831X_DC3_ON_VSEL_SHIFT)
+
+#endif
+
+#define WM831X_DC1_DVS_MODE_VAL             (0x02<<WM831X_DC1_DVS_SRC_SHIFT)
+#define WM831X_DC2_DVS_MODE_VAL             (0x02<<WM831X_DC2_DVS_SRC_SHIFT)
+
+#define WM831X_DC1_DVS_CONTROL_VAL           (0x20<<WM831X_DC1_DVS_VSEL_SHIFT)
+#define WM831X_DC2_DVS_CONTROL_VAL           (0x20<<WM831X_DC2_DVS_VSEL_SHIFT)
+
+#define WM831X_DC1_DVS_MASK                  (WM831X_DC1_DVS_SRC_MASK|WM831X_DC1_DVS_VSEL_MASK)
+#define WM831X_DC2_DVS_MASK                  (WM831X_DC2_DVS_SRC_MASK|WM831X_DC1_DVS_VSEL_MASK)
+
+#define WM831X_DC1_DVS_VAL                   (WM831X_DC1_DVS_MODE_VAL|WM831X_DC1_DVS_CONTROL_VAL)
+#define WM831X_DC2_DVS_VAL                   (WM831X_DC2_DVS_MODE_VAL|WM831X_DC2_DVS_CONTROL_VAL)
+
+#define WM831X_GPN_FN_VAL_HW_EN              (0x0A<<WM831X_GPN_FN_SHIFT)
+#define WM831X_GPN_FN_VAL_HW_CTL             (0x0C<<WM831X_GPN_FN_SHIFT)
+#define WM831X_GPN_FN_VAL_DVS1               (0x08<<WM831X_GPN_FN_SHIFT)
+
+#define WM831X_GPN_DIR_VAL                   (0x1<<WM831X_GPN_DIR_SHIFT)
+#define WM831X_GPN_PULL_VAL                  (0x3<<WM831X_GPN_PULL_SHIFT)
+#define WM831X_GPN_INT_MODE_VAL              (0x1<<WM831X_GPN_INT_MODE_SHIFT)
+#define WM831X_GPN_POL_VAL                   (0x1<<WM831X_GPN_POL_SHIFT)
+#define WM831X_GPN_ENA_VAL                   (0x1<<WM831X_GPN_ENA_SHIFT)
+
+#define  WM831X_GPIO7_8_9_MASK               (WM831X_GPN_DIR_MASK|WM831X_GPN_INT_MODE_MASK|WM831X_GPN_PULL_MASK|WM831X_GPN_POL_MASK|WM831X_GPN_FN_MASK)
+
+#define WM831X_GPIO7_VAL                     (WM831X_GPN_DIR_VAL|WM831X_GPN_PULL_VAL|WM831X_GPN_INT_MODE_VAL|WM831X_GPN_POL_VAL|WM831X_GPN_ENA_VAL|WM831X_GPN_FN_VAL_HW_EN)
+#define WM831X_GPIO8_VAL                     (WM831X_GPN_DIR_VAL|WM831X_GPN_PULL_VAL|WM831X_GPN_INT_MODE_VAL|WM831X_GPN_POL_VAL|WM831X_GPN_ENA_VAL|WM831X_GPN_FN_VAL_HW_CTL)
+#define WM831X_GPIO9_VAL                     (WM831X_GPN_DIR_VAL|WM831X_GPN_PULL_VAL|WM831X_GPN_INT_MODE_VAL|WM831X_GPN_POL_VAL|WM831X_GPN_ENA_VAL|WM831X_GPN_FN_VAL_DVS1)
+
+#define WM831X_STATUS_LED_MASK                0xC000
+#define WM831X_STATUS_LED_ON                  (0x1 << 14)
+#define WM831X_STATUS_LED_OFF                 (0x0 << 14)
+
+#define WM831X_DC1_CONTROL_1_RATE_VAL        (0x3<<WM831X_DC1_RATE_SHIFT)
+#define WM831X_DC2_CONTROL_1_RATE_VAL        (0x3<<WM831X_DC2_RATE_SHIFT)
+
+static int wm8326_post_init(struct wm831x *wm831x)
+{
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	unsigned int reg;
+	void __iomem *gpc_base = IO_ADDRESS(GPC_BASE_ADDR);
+#endif
+
+	wm831x_set_bits(wm831x, WM831X_DC1_ON_CONFIG, WM831X_DC1_ON_VSEL_MASK, WM831X_DC1_ON_CONFIG_VAL);
+	wm831x_set_bits(wm831x, WM831X_DC2_ON_CONFIG, WM831X_DC2_ON_VSEL_MASK, WM831X_DC2_ON_CONFIG_VAL);
+	wm831x_set_bits(wm831x, WM831X_DC3_ON_CONFIG, WM831X_DC3_ON_VSEL_MASK, WM831X_DC3_ON_CONFIG_VAL);
+
+	wm831x_set_bits(wm831x, WM831X_DC1_DVS_CONTROL, WM831X_DC1_DVS_MASK, WM831X_DC1_DVS_VAL);
+	wm831x_set_bits(wm831x, WM831X_DC2_DVS_CONTROL, WM831X_DC2_DVS_MASK, WM831X_DC2_DVS_VAL);
+
+	wm831x_set_bits(wm831x, WM831X_GPIO7_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO7_VAL);
+	wm831x_set_bits(wm831x, WM831X_GPIO8_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO8_VAL);
+	wm831x_set_bits(wm831x, WM831X_GPIO9_CONTROL, WM831X_GPIO7_8_9_MASK, WM831X_GPIO9_VAL);
+
+	wm831x_set_bits(wm831x, WM831X_DC1_CONTROL_1, WM831X_DC1_RATE_MASK, WM831X_DC1_CONTROL_1_RATE_VAL);
+	wm831x_set_bits(wm831x, WM831X_DC2_CONTROL_1, WM831X_DC2_RATE_MASK, WM831X_DC2_CONTROL_1_RATE_VAL);
+
+	wm831x_set_bits(wm831x, WM831X_STATUS_LED_1 , WM831X_STATUS_LED_MASK, WM831X_STATUS_LED_OFF);
+	wm831x_set_bits(wm831x, WM831X_STATUS_LED_2 , WM831X_STATUS_LED_MASK, WM831X_STATUS_LED_ON);
+
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	/*digital bypass VDDPU/VDDSOC/VDDARM*/
+	reg = __raw_readl(ANADIG_REG_CORE);
+	reg &= ~BM_ANADIG_REG_CORE_REG0_TRG;
+	reg |= BF_ANADIG_REG_CORE_REG0_TRG(0x1f);
+	reg &= ~BM_ANADIG_REG_CORE_REG1_TRG;
+	reg |= BF_ANADIG_REG_CORE_REG1_TRG(0x1f);
+	reg &= ~BM_ANADIG_REG_CORE_REG2_TRG;
+	reg |= BF_ANADIG_REG_CORE_REG2_TRG(0x1f);
+	__raw_writel(reg, ANADIG_REG_CORE);
+	/* Mask the ANATOP brown out interrupt in the GPC. */
+	reg = __raw_readl(gpc_base + 0x14);
+	reg |= 0x80000000;
+	__raw_writel(reg, gpc_base + 0x14);
+#endif
+
+	return 0;
+}
+
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+static struct regulator_consumer_supply tvbs_vddarm_consumers[] = {
+	{
+		.supply     = "VDDCORE_DCDC1",
+	}
+};
+
+static struct regulator_consumer_supply tvbs_vddsoc_consumers[] = {
+	{
+		.supply     = "VDDSOC_DCDC2",
+	}
+};
+#endif
+
+#ifdef CONFIG_REGULATOR
+static struct regulator_init_data tvbs_vddarm_dcdc1 = {
+	.constraints = {
+		.name = "vdd_arm",
+		.min_uV = 100000,
+		.max_uV = 1500000,
+		.min_uA = 0,
+		.max_uA = 4000000,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
+		.valid_modes_mask = 0,
+		//               .valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+		//                      REGULATOR_CHANGE_STATUS | REGULATOR_CHANGE_MODE,
+		.always_on = 1,
+		.boot_on = 1,
+	},
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	.num_consumer_supplies = ARRAY_SIZE(tvbs_vddarm_consumers),
+	.consumer_supplies = tvbs_vddarm_consumers,
+#endif
+};
+
+static struct regulator_init_data tvbs_vddsoc_dcdc2 = {
+	.constraints = {
+		.name = "vdd_soc",
+		.min_uV = 100000,
+		.max_uV = 1500000,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
+		.valid_modes_mask = 0,
+		.always_on = 1,
+		.boot_on = 1,
+	},
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	.num_consumer_supplies = ARRAY_SIZE(tvbs_vddsoc_consumers),
+	.consumer_supplies = tvbs_vddsoc_consumers,
+#endif
+};
+
+static struct regulator_init_data tvbs_vddmem_1v5_dcdc3 = {
+	.constraints = {
+		.name = "vddmem",
+		.min_uV = 1000000,
+		.max_uV = 1500000,
+		.valid_ops_mask = 0,//REGULATOR_CHANGE_VOLTAGE,
+		.valid_modes_mask = 0,
+		.always_on = 1,
+		.boot_on = 1,
+	},
+#ifdef CONFIG_MX6_INTER_LDO_BYPASS
+	.num_consumer_supplies = ARRAY_SIZE(tvbs_vddsoc_consumers),
+	.consumer_supplies = tvbs_vddsoc_consumers,
+#endif
+};
+
+static struct regulator_init_data vldo1 = {
+	.constraints = {
+		.name = "VLDO1",
+		.always_on = 1,
+	},
+};
+static struct regulator_init_data vldo3 = {
+	.constraints = {
+		.name = "VLDO3",
+		.always_on = 1,
+	},
+};
+
+static struct regulator_init_data vldo7_1v8 = {
+	.constraints = {
+		.name = "VLDO7",
+		.always_on = 1,
+	},
+};
+static struct regulator_init_data vldo9 = {
+	.constraints = {
+		.name = "VLDO9",
+		.always_on = 1,
+	},
+};
+static struct regulator_init_data vldo10 = {
+	.constraints = {
+		.name = "VLDO10",
+		.always_on = 1,
+	},
+};
+#endif
+
+static struct wm831x_pdata tvbs_wm8326_pdata = {
+#ifdef CONFIG_REGULATOR
+	.dcdc = {
+		&tvbs_vddarm_dcdc1,  /* DCDC1 */
+		&tvbs_vddsoc_dcdc2,  /* DCDC2 */
+		&tvbs_vddmem_1v5_dcdc3, /* DCDC3 */
+	},
+	.ldo = {
+		 &vldo1,        /* LDO1 */
+		 NULL, /* LDO2 */
+		 &vldo3,                /* LDO3 NC */
+		 NULL,   /* LDO4 */
+		 NULL,    /* LDO5 */
+		 NULL,     /* LDO6 */
+		 &vldo7_1v8,  /* LDO7 */
+		 NULL,  /* LDO8 */
+		 &vldo9,    /* LDO9 */
+		 &vldo10,  /* LDO10 */
+		 NULL,  /* LDO11 */
+	},
+#endif
+	.post_init = wm8326_post_init,
+};
 
 static int wm831x_i2c_probe(struct i2c_client *i2c,
 			    const struct i2c_device_id *id)
@@ -35,6 +255,7 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 		return -ENOMEM;
 
 	i2c_set_clientdata(i2c, wm831x);
+	i2c->dev.platform_data = &tvbs_wm8326_pdata;
 	wm831x->dev = &i2c->dev;
 
 	wm831x->regmap = devm_regmap_init_i2c(i2c, &wm831x_regmap_config);
@@ -44,6 +265,7 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 			ret);
 		return ret;
 	}
+	//printk("=====i2c irq %d\n", i2c->irq);
 
 	return wm831x_device_init(wm831x, id->driver_data, i2c->irq);
 }
