@@ -13,9 +13,11 @@
 	model = "Freescale i.MX6 Quad Plus SABRE Smart Device Board";
 };
 
+/*
 &cpu0 {
 	arm-supply = <&sw2_reg>;
 };
+*/
 
 &iomuxc {
 	imx6qdl-sabresd {
@@ -72,9 +74,11 @@
 	prefetch;
 };
 
+/*
 &ov564x_mipi {
-	DOVDD-supply = <&sw4_reg>; /* 1.8v */
+	DOVDD-supply = <&sw4_reg>; 
 };
+*/
 
 &pcie {
 	power-on-gpio = <&gpio3 19 0>;

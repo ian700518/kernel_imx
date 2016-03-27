@@ -8,6 +8,8 @@
 
 #include "imx6dl-sabresd-ldo.dts"
 
-&pmic {
+/*
+pmic {
 	compatible = "fsl,pfuze200";
 };
+*/
