@@ -173,10 +173,11 @@
 		status = "okay";
 	};
 
-	leds {
-		compatible = "led-tvbs";
+	leds-tvbs {
+		compatible = "leds-tvbs";
 		led-red-gpios = <&gpio4 16 GPIO_ACTIVE_HIGH>;
 		led-grn-gpios = <&gpio4 19 GPIO_ACTIVE_HIGH>;
+		battadc-gpios = <&gpio6 3 0>;
 		status = "okay";
 	};
 
@@ -592,6 +593,7 @@
 				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0x80000000	/* UHF_CODEC_SEL, H: UHF, L: normal */
 				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19		0x80000000	/* LED_GRN */
 				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16	0x80000000	/* LED_RED */
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03	0x80000000	/* BATT_ADC_SEL */
 			>;
 		};
 
