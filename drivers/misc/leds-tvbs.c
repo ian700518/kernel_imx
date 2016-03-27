@@ -20,6 +20,7 @@ static int led_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	int ret;
 	int led_red_gpio, led_grn_gpio;
+	int batt_adc_sel_gpio;
 
 	led_red_gpio = of_get_named_gpio(np, "led-red-gpios", 0);
 	if (gpio_is_valid(led_red_gpio)) {
@@ -36,6 +37,16 @@ static int led_probe(struct platform_device *pdev)
 		if (ret)
 			pr_warn("failed to request led-grn-gpios gpio\n");
 	}
+
+
+	batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
+	if (gpio_is_valid(batt_adc_sel_gpio)) {
+		ret = gpio_request_one(batt_adc_sel_gpio, GPIOF_OUT_INIT_HIGH,
+					"Batt ADC sel");
+		if (ret)
+			pr_warn("failed to request battadc-sel-gpios gpio\n");
+	} else
+		dev_warn(dev, "no batt_adc_sel pin available\n");
 
 	return 0;
 }
