@@ -1560,6 +1560,11 @@ static const struct mfd_cell wm8320_devs[] = {
 		.resources = wm831x_on_resources,
 	},
 	{
+		.name = "wm831x-power",
+		.num_resources = ARRAY_SIZE(wm831x_power_resources),
+		.resources = wm831x_power_resources,
+	},
+	{
 		.name = "wm831x-status",
 		.id = 1,
 		.num_resources = ARRAY_SIZE(wm831x_status1_resources),

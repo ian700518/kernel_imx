@@ -531,6 +531,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	 */
 	wm831x_config_battery(wm831x);
 
+#if 0
 	wall->name = power->wall_name;
 	wall->type = POWER_SUPPLY_TYPE_MAINS;
 	wall->properties = wm831x_wall_props;
@@ -548,11 +549,14 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	ret = power_supply_register(&pdev->dev, usb);
 	if (ret)
 		goto err_wall;
-
+#endif
 	ret = wm831x_reg_read(wm831x, WM831X_CHARGER_CONTROL_1);
 	if (ret < 0)
 		goto err_wall;
 	power->have_battery = ret & WM831X_CHG_ENA;
+
+	/*printk("%s %d ===\n", __func__, power->have_battery);*/
+	power->have_battery = 1;	/* force to have battery, Robby */
 
 	if (power->have_battery) {
 		    battery->name = power->battery_name;
@@ -565,6 +569,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 			    goto err_usb;
 	}
 
+#if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
 	ret = request_threaded_irq(irq, NULL, wm831x_syslo_irq,
 				   IRQF_TRIGGER_RISING, "System power low",
@@ -600,9 +605,11 @@ static int wm831x_power_probe(struct platform_device *pdev)
 			goto err_bat_irq;
 		}
 	}
+#endif
 
 	return ret;
 
+#if 0
 err_bat_irq:
 	for (; i >= 0; i--) {
 		irq = platform_get_irq_byname(pdev, wm831x_bat_irqs[i]);
@@ -616,6 +623,7 @@ err_syslo:
 err_battery:
 	if (power->have_battery)
 		power_supply_unregister(battery);
+#endif
 err_usb:
 	power_supply_unregister(usb);
 err_wall:
@@ -631,6 +639,7 @@ static int wm831x_power_remove(struct platform_device *pdev)
 	struct wm831x *wm831x = wm831x_power->wm831x;
 	int irq, i;
 
+#if 0
 	for (i = 0; i < ARRAY_SIZE(wm831x_bat_irqs); i++) {
 		irq = wm831x_irq(wm831x, 
 				 platform_get_irq_byname(pdev,
@@ -643,6 +652,7 @@ static int wm831x_power_remove(struct platform_device *pdev)
 
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
 	free_irq(irq, wm831x_power);
+#endif
 
 	if (wm831x_power->have_battery)
 		power_supply_unregister(&wm831x_power->battery);
