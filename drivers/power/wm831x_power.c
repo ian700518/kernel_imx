@@ -19,6 +19,8 @@
 #include <linux/mfd/wm831x/pmu.h>
 #include <linux/mfd/wm831x/pdata.h>
 
+#define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
+
 struct wm831x_power {
 	struct wm831x *wm831x;
 	struct power_supply wall;
@@ -28,7 +30,84 @@ struct wm831x_power {
 	char usb_name[20];
 	char battery_name[20];
 	bool have_battery;
+	struct delayed_work work;
+	unsigned int interval;
+	int voltage_uV;
+	int percent;
+	int old_percent;
+	int first_delay_count;
 };
+
+typedef struct {
+	u32 voltage;
+	u32 percent;
+} battery_capacity , *pbattery_capacity;
+static battery_capacity dischargingTable[] = {
+	{4050*3000, 100},
+	{4035*3000,	99},
+	{4020*3000,	98},
+	{4010*3000,	97},
+	{4000*3000,	96},
+	{3990*3000,	96},
+	{3980*3000,	95},
+	{3970*3000,	92},
+	{3960*3000,	91},
+	{3950*3000,	90},
+	{3940*3000,	88},
+	{3930*3000,	86},
+	{3920*3000,	84},
+	{3910*3000,	82},
+	{3900*3000,	80},
+	{3890*3000,	74},
+	{3860*3000,	69},
+	{3830*3000,	64},
+	{3780*3000,	59},
+	{3760*3000,	54},
+	{3740*3000,	49},
+	{3720*3000,	44},
+	{3700*3000,	39},
+	{3680*3000,	34},
+	{3660*3000,	29},
+	{3640*3000,	24},
+	{3620*3000,	19},
+	{3600*3000,	14},
+	{3580*3000,	13},
+	{3560*3000,	12},
+	{3540*3000,	11},
+	{3520*3000,	10},
+	{3500*3000,	9},
+	{3480*3000,	8},
+	{3460*3000,	7},
+	{3440*3000,	6},
+	{3430*3000,	5},
+	{3420*3000,	4},
+	{3020*3000,	0},
+};
+
+u32 calibrate_battery_capability_percent(struct wm831x_power *power)
+{
+	u8 i;
+	pbattery_capacity pTable;
+	u32 tableSize;
+
+	/* ONLY discharging */
+//	if (power->battery_status == POWER_SUPPLY_STATUS_DISCHARGING) {
+		pTable = dischargingTable;
+		tableSize = sizeof(dischargingTable)/
+			sizeof(dischargingTable[0]);
+//	} else {
+//		pTable = chargingTable;
+//		tableSize = sizeof(chargingTable)/
+//			sizeof(chargingTable[0]);
+//	}
+	for (i = 0; i < tableSize; i++) {
+		if (power->voltage_uV >= pTable[i].voltage)
+			return	pTable[i].percent;
+	}
+
+	return 0;
+}
+
 
 static int wm831x_power_check_online(struct wm831x *wm831x, int supply,
 				     union power_supply_propval *val)
@@ -299,10 +378,10 @@ static int wm831x_bat_check_status(struct wm831x *wm831x, int *status)
 	if (ret < 0)
 		return ret;
 
-	if (ret & WM831X_PWR_SRC_BATT) {
+//	if (ret & WM831X_PWR_SRC_BATT) {	// NOTE: wm8326 not enable wm831x_power by default -- no WM831X_PWR_SRC_BATT bit
 		*status = POWER_SUPPLY_STATUS_DISCHARGING;
 		return 0;
-	}
+//	}
 
 	ret = wm831x_reg_read(wm831x, WM831X_CHARGER_STATUS);
 	if (ret < 0)
@@ -354,6 +433,9 @@ static int wm831x_bat_check_health(struct wm831x *wm831x, int *health)
 {
 	int ret;
 
+	*health = POWER_SUPPLY_HEALTH_GOOD;
+	return 0;
+
 	ret = wm831x_reg_read(wm831x, WM831X_CHARGER_STATUS);
 	if (ret < 0)
 		return ret;
@@ -401,9 +483,12 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_STATUS:
 		ret = wm831x_bat_check_status(wm831x, &val->intval);
 		break;
-	case POWER_SUPPLY_PROP_ONLINE:
-		ret = wm831x_power_check_online(wm831x, WM831X_PWR_SRC_BATT,
-						val);
+//	case POWER_SUPPLY_PROP_ONLINE:
+//		ret = wm831x_power_check_online(wm831x, WM831X_PWR_SRC_BATT,
+//						val);
+//		break;
+	case POWER_SUPPLY_PROP_PRESENT:
+		val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		ret = wm831x_power_read_voltage(wm831x, WM831X_AUX_BATT, val);
@@ -412,7 +497,16 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 		ret = wm831x_bat_check_health(wm831x, &val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_TYPE:
-		ret = wm831x_bat_check_type(wm831x, &val->intval);
+		//ret = wm831x_bat_check_type(wm831x, &val->intval);
+		val->intval = POWER_SUPPLY_TYPE_BATTERY;
+		break;
+	case POWER_SUPPLY_PROP_CAPACITY:
+		val->intval = wm831x_power->percent < 0 ? 0 :
+				(wm831x_power->percent > 100 ? 100 : wm831x_power->percent);
+		printk("capacity %d\n", val->intval);
+		break;
+	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
+		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
 		break;
 	default:
 		ret = -EINVAL;
@@ -424,10 +518,13 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 
 static enum power_supply_property wm831x_bat_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
-	POWER_SUPPLY_PROP_ONLINE,
+//	POWER_SUPPLY_PROP_ONLINE,
+	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_HEALTH,
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
+	POWER_SUPPLY_PROP_CAPACITY,
+	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 };
 
 static const char *wm831x_bat_irqs[] = {
@@ -487,6 +584,52 @@ static irqreturn_t wm831x_pwr_src_irq(int irq, void *data)
 	power_supply_changed(&wm831x_power->wall);
 
 	return IRQ_HANDLED;
+}
+
+static void wm831x_battery_update_status(struct wm831x_power *power)
+{
+	int voltage;
+	int ret;
+
+	ret = wm831x_power_read_voltage(power->wm831x, WM831X_AUX_BATT, &voltage);
+	if (ret < 0) {
+		printk("%s: read voltage failure\n", __func__);
+		return;
+	}
+
+	power->voltage_uV = voltage;
+	printk("voltage_uV %d\n", power->voltage_uV);
+
+	power->percent = calibrate_battery_capability_percent(power);
+	printk("percent %d\n", power->percent);
+	if (power->percent != power->old_percent) {
+		power->old_percent = power->percent;
+		power_supply_changed(&power->battery);
+	}
+
+	if (power->first_delay_count < 200) {
+		power->first_delay_count = power->first_delay_count + 1;
+		power_supply_changed(&power->battery);
+	}
+}
+
+static void wm831x_battery_work(struct work_struct *w)
+{
+	struct wm831x_power *power;
+
+	power = container_of(w, struct wm831x_power, work);
+	power->interval = HZ * BATTERY_UPDATE_INTERVAL;
+
+	wm831x_battery_update_status(power);
+//	dev_dbg(data->dev, "battery voltage: %4d mV\n", data->voltage_uV);
+//	dev_dbg(data->dev, "charger online status: %d\n",
+//		data->charger_online);
+//	dev_dbg(data->dev, "battery status : %d\n" , data->battery_status);
+//	dev_dbg(data->dev, "battery capacity percent: %3d\n", data->percent);
+//	dev_dbg(data->dev, "data->usb_in: %x , data->ta_in: %x\n",
+//		data->usb_in, data->ta_in);
+	/* reschedule for the next time */
+	schedule_delayed_work(&power->work, power->interval);
 }
 
 static int wm831x_power_probe(struct platform_device *pdev)
@@ -560,6 +703,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 
 	if (power->have_battery) {
 		    battery->name = power->battery_name;
+		    battery->type = POWER_SUPPLY_TYPE_BATTERY;
 		    battery->properties = wm831x_bat_props;
 		    battery->num_properties = ARRAY_SIZE(wm831x_bat_props);
 		    battery->get_property = wm831x_bat_get_prop;
@@ -568,6 +712,10 @@ static int wm831x_power_probe(struct platform_device *pdev)
 		    if (ret)
 			    goto err_usb;
 	}
+
+	power->first_delay_count = 0;
+	INIT_DELAYED_WORK(&power->work, wm831x_battery_work);
+	schedule_delayed_work(&power->work, power->interval);
 
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
