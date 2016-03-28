@@ -273,6 +273,8 @@ int wm831x_auxadc_read_uv(struct wm831x *wm831x, enum wm831x_auxadc input)
 
 	ret *= 1465;
 
+	ret = ret * (330 + 100) / 100;	// VMAIN_BAT_3S/(330+100) = VBATT_ADC/100, same does VAUX_BAT_3S
+
 	return ret;
 }
 EXPORT_SYMBOL_GPL(wm831x_auxadc_read_uv);
