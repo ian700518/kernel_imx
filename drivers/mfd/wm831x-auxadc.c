@@ -169,6 +169,7 @@ static int wm831x_auxadc_read_polled(struct wm831x *wm831x,
 		goto out;
 	}
 
+	input = 2; /* force to GPIO12 on tvbs, Robby */
 	/* We force a single source at present */
 	src = input;
 	ret = wm831x_reg_write(wm831x, WM831X_AUXADC_SOURCE,
@@ -187,7 +188,7 @@ static int wm831x_auxadc_read_polled(struct wm831x *wm831x,
 
 	/* If we're not using interrupts then poll the
 	 * interrupt status register */
-	timeout = 5;
+	timeout = 50;
 	while (timeout) {
 		msleep(1);
 
@@ -206,6 +207,8 @@ static int wm831x_auxadc_read_polled(struct wm831x *wm831x,
 					 WM831X_AUXADC_DATA_EINT);
 			break;
 		} else {
+			if (--timeout)
+				continue;
 			dev_err(wm831x->dev,
 				"AUXADC conversion timeout\n");
 			ret = -EBUSY;
@@ -235,7 +238,8 @@ static int wm831x_auxadc_read_polled(struct wm831x *wm831x,
 	}
 
 disable:
-	wm831x_set_bits(wm831x, WM831X_AUXADC_CONTROL, WM831X_AUX_ENA, 0);
+//	wm831x_set_bits(wm831x, WM831X_AUXADC_CONTROL, WM831X_AUX_ENA, 0);
+	wm831x_reg_write(wm831x, WM831X_AUXADC_CONTROL, 0);
 out:
 	mutex_unlock(&wm831x->auxadc_lock);
 	return ret;
