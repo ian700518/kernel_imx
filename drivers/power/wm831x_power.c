@@ -36,6 +36,9 @@ struct wm831x_power {
 	int percent;
 	int old_percent;
 	int first_delay_count;
+#define	NR_VOLTAGE	8
+	u32 saved_voltage[NR_VOLTAGE];
+
 };
 
 typedef struct {
@@ -83,6 +86,35 @@ static battery_capacity dischargingTable[] = {
 	{3420*3000,	4},
 	{3020*3000,	0},
 };
+
+static int get_mean_voltages(struct wm831x_power *power)
+{
+	int i, j;
+	u32 voltage_uV;
+
+	j = 0;
+	voltage_uV = 0;
+	for (i = 0; i < NR_VOLTAGE; i++) {
+		pr_debug( " %s  %d, %d\n", __func__, i, power->saved_voltage[i]);
+		if (power->saved_voltage[i]) {
+			voltage_uV += power->saved_voltage[i];
+			j++;
+		}
+	}
+
+	if (j == 0)
+		return 0;
+	else
+		return voltage_uV / j;
+}
+
+static int insert_saved_voltages(struct wm831x_power *power, u32 voltage_uV)
+{
+	static int i = 0;
+
+	power->saved_voltage[i % NR_VOLTAGE] = voltage_uV;
+	i++;
+}
 
 u32 calibrate_battery_capability_percent(struct wm831x_power *power)
 {
@@ -503,7 +535,7 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = wm831x_power->percent < 0 ? 0 :
 				(wm831x_power->percent > 100 ? 100 : wm831x_power->percent);
-		printk("capacity %d\n", val->intval);
+		pr_debug("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
@@ -598,10 +630,13 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	}
 
 	power->voltage_uV = voltage;
-	printk("voltage_uV %d\n", power->voltage_uV);
+	pr_debug("voltage_uV %d\n", power->voltage_uV);
 
+	insert_saved_voltages(power, power->voltage_uV);
+	power->voltage_uV = get_mean_voltages(power);
+	pr_debug("voltage_uV mean %d\n", power->voltage_uV);
 	power->percent = calibrate_battery_capability_percent(power);
-	printk("percent %d\n", power->percent);
+	pr_debug("percent %d\n", power->percent);
 	if (power->percent != power->old_percent) {
 		power->old_percent = power->percent;
 		power_supply_changed(&power->battery);
@@ -700,6 +735,9 @@ static int wm831x_power_probe(struct platform_device *pdev)
 
 	/*printk("%s %d ===\n", __func__, power->have_battery);*/
 	power->have_battery = 1;	/* force to have battery, Robby */
+	power->old_percent = 100;
+	for (i = 0; i < NR_VOLTAGE; i++)
+		power->saved_voltage[i] = 0;
 
 	if (power->have_battery) {
 		    battery->name = power->battery_name;
