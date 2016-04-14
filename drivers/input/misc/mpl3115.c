@@ -187,7 +187,7 @@ static void report_abs(struct mpl3115_data *pdata)
 	idev = pdata->poll_dev->input;
 	mpl3115_read_data(pdata->client, &pressure, &temperature);
 	input_report_abs(idev, ABS_PRESSURE, pressure);
-	input_report_abs(idev, ABS_TEMPTERAURE, temperature);
+//	input_report_abs(idev, ABS_TEMPTERAURE, temperature);
 	input_sync(idev);
 out:
 	mutex_unlock(&pdata->data_lock);
@@ -263,7 +263,7 @@ static int mpl3115_probe(struct i2c_client *client,
 	idev->evbit[0] = BIT_MASK(EV_ABS);
 
 	input_set_abs_params(idev, ABS_PRESSURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
-	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+//	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
 	result = input_register_polled_device(pdata->poll_dev);
 	if (result) {
 		dev_err(&client->dev, "register poll device failed!\n");

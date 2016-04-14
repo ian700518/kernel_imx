@@ -28,6 +28,7 @@
 #include <linux/input-polldev.h>
 #include "sht3x.h"
 
+#define ABS_TEMPTERAURE				ABS_GAS
 #define ABS_HUMIDITY				ABS_MISC
 #define SHT3X_ACTIVED    		 		1
 #define SHT3X_STANDBY 				0
@@ -193,7 +194,7 @@ static void report_abs(struct sht3x_data *pdata)
 		goto out;
 	idev = pdata->poll_dev->input;
 	input_report_abs(idev, ABS_HUMIDITY, pdata->humidity);
-//	input_report_abs(idev, ABS_TEMPTERAURE, data->temperature);
+	input_report_abs(idev, ABS_TEMPTERAURE, pdata->temperature);
 	input_sync(idev);
 out:
 	mutex_unlock(&pdata->update_lock);
@@ -263,7 +264,7 @@ static int sht3x_probe(struct i2c_client *client,
 	idev->id.bustype = BUS_I2C;
 	idev->evbit[0] = BIT_MASK(EV_ABS);
 
-//	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
+	input_set_abs_params(idev, ABS_TEMPTERAURE, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
 	input_set_abs_params(idev, ABS_HUMIDITY, -0x7FFFFFFF, 0x7FFFFFFF, 0, 0);
 	ret = input_register_polled_device(data->poll_dev);
 	if (ret) {
