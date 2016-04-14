@@ -20,6 +20,7 @@
 #include <linux/mfd/wm831x/pdata.h>
 
 #define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
+#define ADC_SAMPLE_COUNT	6
 
 struct wm831x_power {
 	struct wm831x *wm831x;
@@ -36,7 +37,7 @@ struct wm831x_power {
 	int percent;
 	int old_percent;
 	int first_delay_count;
-#define	NR_VOLTAGE	8
+#define	NR_VOLTAGE	12
 	u32 saved_voltage[NR_VOLTAGE];
 
 };
@@ -535,7 +536,7 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = wm831x_power->percent < 0 ? 0 :
 				(wm831x_power->percent > 100 ? 100 : wm831x_power->percent);
-		pr_debug("capacity %d\n", val->intval);
+		pr_info("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
@@ -618,32 +619,57 @@ static irqreturn_t wm831x_pwr_src_irq(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static void wm831x_battery_update_status(struct wm831x_power *power)
+u32 calibration_voltage(struct wm831x_power *power)
 {
-	int voltage;
+	u32 voltage_data = 0;
+	u32 voltage_each;
+	int i = 0, j = 0;
 	int ret;
 
-	ret = wm831x_power_read_voltage(power->wm831x, WM831X_AUX_BATT, &voltage);
-	if (ret < 0) {
-		printk("%s: read voltage failure\n", __func__);
-		return;
+	/* simple average */
+	for (i = 0; i < ADC_SAMPLE_COUNT; i++) {
+		ret = wm831x_power_read_voltage(power->wm831x, WM831X_AUX_BATT, &voltage_each);
+		if (ret < 0) {
+			pr_err("%s: read voltage failure\n", __func__);
+			j++;
+			continue;
+		}
+		voltage_data += voltage_each;
 	}
 
-	power->voltage_uV = voltage;
+	if (j < ADC_SAMPLE_COUNT)
+		voltage_data = voltage_data / (ADC_SAMPLE_COUNT - j);
+	else
+		voltage_data = 0;
+
+	return voltage_data;
+}
+
+static void wm831x_battery_update_status(struct wm831x_power *power)
+{
+	u32 voltage = 0;
+	int ret;
+
+	power->voltage_uV = calibration_voltage(power);
 	pr_debug("voltage_uV %d\n", power->voltage_uV);
 
-	insert_saved_voltages(power, power->voltage_uV);
-	power->voltage_uV = get_mean_voltages(power);
-	pr_debug("voltage_uV mean %d\n", power->voltage_uV);
+	//insert_saved_voltages(power, power->voltage_uV);
+	//power->voltage_uV = get_mean_voltages(power);
+	//pr_debug("voltage_uV mean %d\n", power->voltage_uV);
 	power->percent = calibrate_battery_capability_percent(power);
-	pr_debug("percent %d\n", power->percent);
-	if (power->percent != power->old_percent) {
+	pr_info("percent %d\n", power->percent);
+
+	if (power->first_delay_count < 2) {
+		power->first_delay_count = power->first_delay_count + 1;
 		power->old_percent = power->percent;
 		power_supply_changed(&power->battery);
 	}
 
-	if (power->first_delay_count < 200) {
-		power->first_delay_count = power->first_delay_count + 1;
+	if (power->percent > power->old_percent) {
+		power->percent = power->old_percent;
+	} else if (power->percent < power->old_percent) {
+		power->old_percent--;// = power->percent;
+		power->percent = power->old_percent;
 		power_supply_changed(&power->battery);
 	}
 }
