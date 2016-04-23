@@ -29,6 +29,7 @@
 #include <linux/err.h>
 #include <linux/hwmon.h>
 #include <linux/input-polldev.h>
+#include <linux/regulator/consumer.h>
 
 #define MPL3115_DRV_NAME			"mpl3115"
 #define ABS_TEMPTERAURE				ABS_MISC
@@ -76,6 +77,8 @@
 #define MPL3115_OFFSET_H			0x2d
 
 #define DATA_SHIFT_BIT(data, bit)     ((data << bit) & (0xff << bit))
+
+static struct regulator *sensor_regulator;
 
 struct mpl3115_data {
 	struct i2c_client *client;
@@ -210,6 +213,23 @@ static int mpl3115_probe(struct i2c_client *client,
 					 I2C_FUNC_SMBUS_BYTE_DATA);
 	if (!result)
 		goto err_out;
+
+	sensor_regulator = devm_regulator_get(&client->dev, "VSENSOR");
+	if (!IS_ERR(sensor_regulator)) {
+		regulator_set_voltage(sensor_regulator,
+				      3300000, 3300000);
+		result = regulator_enable(sensor_regulator);
+		if (result) {
+			pr_err("%s:sensor set voltage error\n", __func__);
+			return result;
+		} else {
+			dev_dbg(&client->dev,
+				"%s:sensor set voltage ok\n", __func__);
+		}
+	} else {
+		pr_err("%s: cannot get senor voltage error\n", __func__);
+		sensor_regulator = NULL;
+	}
 
 	client_id = i2c_smbus_read_byte_data(client, MPL3115_WHO_AM_I);
 	printk("read mpl3115 chip id 0x%x\n", client_id);
