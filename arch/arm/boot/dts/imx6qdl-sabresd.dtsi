@@ -145,7 +145,7 @@
 
 		power {
 			label = "Power Button";
-			gpios = <&gpio3 13 1>;
+			gpios = <&gpio3 19 1>;
 			gpio-key,wakeup;
 			linux,code = <KEY_POWER>;
 		};
@@ -580,7 +580,7 @@
 				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 0x80000000	/* LCD PWREN*/
 				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 0x80000000	/* LCD REV */
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11 0x80000000	/* BLT ON */
-				MX6QDL_PAD_EIM_DA14__GPIO3_IO14 0x80000000	/* SD2 DET: microSD */
+				MX6QDL_PAD_EIM_D18__GPIO3_IO18 0x80000000	/* SD2 DET: microSD */
 				MX6QDL_PAD_ENET_RXD0__XTALOSC_OSC32K_32K_OUT 0x100b1
 				MX6QDL_PAD_CSI0_DAT7__GPIO5_IO25 0x100b1	/* ACC INT, FXLS8471 */
 				MX6QDL_PAD_GPIO_3__CCM_CLKO2	0x130b0		/* MIPI Camera */
@@ -644,7 +644,7 @@
 
 		pinctrl_gpio_keys: gpio_keysgrp {
 			fsl,pins = <
-				MX6QDL_PAD_EIM_DA13__GPIO3_IO13 0x1b0b0
+				MX6QDL_PAD_EIM_D19__GPIO3_IO19 0x1b0b0
                 MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28 0x80000000
 				MX6QDL_PAD_CSI0_DAT14__GPIO6_IO00 0x80000000
 			>;
@@ -1023,7 +1023,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc2>;
 	bus-width = <4>;
-	cd-gpios = <&gpio3 14 0>;
+	cd-gpios = <&gpio3 18 0>;
 	wp-gpios = <>;
 	no-1-8-v;
 	pm-ignore-notify;
