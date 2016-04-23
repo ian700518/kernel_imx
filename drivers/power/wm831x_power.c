@@ -21,6 +21,7 @@
 
 #define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
 #define ADC_SAMPLE_COUNT	6
+#define PERCENT_UPDATE_THRESHOLD_COUNT	3
 
 struct wm831x_power {
 	struct wm831x *wm831x;
@@ -39,6 +40,7 @@ struct wm831x_power {
 	int first_delay_count;
 #define	NR_VOLTAGE	12
 	u32 saved_voltage[NR_VOLTAGE];
+	int percent_minus_update_threshold;
 
 };
 
@@ -667,10 +669,18 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 
 	if (power->percent > power->old_percent) {
 		power->percent = power->old_percent;
+		power->percent_minus_update_threshold = 0;
 	} else if (power->percent < power->old_percent) {
+		power->percent_minus_update_threshold++;
+	}
+
+	if (power->percent_minus_update_threshold >=
+		PERCENT_UPDATE_THRESHOLD_COUNT) {
 		power->old_percent--;// = power->percent;
 		power->percent = power->old_percent;
 		power_supply_changed(&power->battery);
+
+		power->percent_minus_update_threshold = 0;
 	}
 }
 
@@ -762,6 +772,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	/*printk("%s %d ===\n", __func__, power->have_battery);*/
 	power->have_battery = 1;	/* force to have battery, Robby */
 	power->old_percent = 100;
+	power->percent_minus_update_threshold = 0;
 	for (i = 0; i < NR_VOLTAGE; i++)
 		power->saved_voltage[i] = 0;
 
