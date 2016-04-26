@@ -266,6 +266,24 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 	} else
 		dev_warn(&i2c->dev, "no batt_adc_sel pin available\n");
 
+	tvbs_wm8326_pdata.backup_acok_gpio = of_get_named_gpio(np, "acok-gpios", 0);
+	if (gpio_is_valid(tvbs_wm8326_pdata.backup_acok_gpio)) {
+		ret = gpio_request_one(tvbs_wm8326_pdata.backup_acok_gpio, GPIOF_DIR_IN,
+					"backup ACOK");
+		if (ret)
+			pr_warn("failed to request backup battery ACOK gpio\n");
+	} else
+		dev_warn(&i2c->dev, "no backup battery ACOK gpio pin available\n");
+
+	tvbs_wm8326_pdata.backup_chgok_gpio = of_get_named_gpio(np, "chgok-gpios", 0);
+	if (gpio_is_valid(tvbs_wm8326_pdata.backup_chgok_gpio)) {
+		ret = gpio_request_one(tvbs_wm8326_pdata.backup_chgok_gpio, GPIOF_DIR_IN,
+					"backup CHGOK");
+		if (ret)
+			pr_warn("failed to request backup battery CHGOK gpio\n");
+	} else
+		dev_warn(&i2c->dev, "no backup battery CHGOK gpio pin available\n");
+
 	i2c_set_clientdata(i2c, wm831x);
 	i2c->dev.platform_data = &tvbs_wm8326_pdata;
 	wm831x->dev = &i2c->dev;

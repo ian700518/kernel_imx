@@ -129,6 +129,11 @@ struct wm831x_pdata {
 	/** gpio for tvbs, low for main battery, high for backup */
 	int batt_adc_sel_gpio;
 
+	/** detect backup battery presence */
+	//int backup_present_gpio;
+	int backup_acok_gpio;
+	int backup_chgok_gpio;
+
 	int irq_base;
 	int gpio_base;
 	int gpio_defaults[WM831X_GPIO_NUM];

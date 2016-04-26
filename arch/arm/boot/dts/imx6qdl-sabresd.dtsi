@@ -517,6 +517,8 @@
 	wm8326: wm8326@34 {
 		compatible = "wlf,wm8326";
 		battadc-gpios = <&gpio6 3 0>;
+		chgok-gpios = <&gpio6 4 0>;
+		acok-gpios = <&gpio6 5 0>;
 		reg = <0x34>;
 	};
 
@@ -596,6 +598,8 @@
 				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16	0x80000000	/* LED_RED */
 				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03	0x80000000	/* BATT_ADC_SEL */
 				MX6QDL_PAD_EIM_DA10__GPIO3_IO10		0x100b1		/* GPIO ON/OFF */
+				MX6QDL_PAD_CSI0_DAT18__GPIO6_IO04    0x80000000		/* nCHGOK */
+				MX6QDL_PAD_CSI0_DAT19__GPIO6_IO05    0x80000000		/* nACOK */
 			>;
 		};
 

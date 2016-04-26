@@ -803,6 +803,22 @@ static ssize_t backup_capacity_show(struct device *dev,
 static DEVICE_ATTR(backup_capacity, 0777,
 		   backup_capacity_show, NULL);
 
+static ssize_t backup_charging_show(struct device *dev,
+			       struct device_attribute *attr,
+			       char *buf)
+{
+	int backup_charging;
+	struct wm831x_pdata *wm831x_pdata = dev_get_drvdata(dev->parent);
+
+	backup_charging = gpio_get_value(wm831x_pdata->backup_acok_gpio)
+			&& !gpio_get_value(wm831x_pdata->backup_chgok_gpio);
+
+	return sprintf(buf, "%d\n", backup_charging);
+}
+
+static DEVICE_ATTR(backup_charging, 0777,
+		   backup_charging_show, NULL);
+
 static int wm831x_power_probe(struct platform_device *pdev)
 {
 	struct wm831x *wm831x = dev_get_drvdata(pdev->dev.parent);
@@ -894,6 +910,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 
 	mutex_init(&power->update_lock);
 	device_create_file(&pdev->dev, &dev_attr_backup_capacity);
+	device_create_file(&pdev->dev, &dev_attr_backup_charging);
 
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
