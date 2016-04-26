@@ -327,9 +327,11 @@
 		#reset-cells = <0>;
 	};
 
+/*
 	minipcie_ctrl {
 		power-on-gpio = <&gpio3 19 0>;
 	};
+*/
 
     bt_rfkill {
                 compatible = "fsl,mxc_bt_rfkill";
@@ -768,6 +770,13 @@
 			>;
 		};
 
+		pinctrl_uart4: uart4grp {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
+				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
+			>;
+		};
+
 		pinctrl_uart5_1: uart5grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL1__UART5_TX_DATA	0x1b0b1
@@ -958,7 +967,7 @@
 &pcie {
 	power-on-gpio = <&gpio3 19 0>;
 	reset-gpio = <&gpio7 12 0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm1 {
@@ -987,6 +996,12 @@
 &uart3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart4>;
 	status = "okay";
 };
 
