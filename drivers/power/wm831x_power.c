@@ -16,6 +16,7 @@
 
 #include <linux/mutex.h>
 #include <linux/of_gpio.h>
+#include <linux/delay.h>
 
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/auxadc.h>
@@ -611,7 +612,7 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 #ifdef JUST_FOR_DEBUG
 		val->intval = 78;
 #endif
-		pr_info("capacity %d\n", val->intval);
+		//pr_info("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 		val->intval = POWER_SUPPLY_CAPACITY_LEVEL_NORMAL;
@@ -696,7 +697,7 @@ static irqreturn_t wm831x_pwr_src_irq(int irq, void *data)
 
 u32 calibration_voltage(struct wm831x_power *power)
 {
-	u32 voltage_data = 0;
+	volatile u32 voltage_data = 1;
 	u32 voltage_each;
 	int i = 0, j = 0;
 	int ret;
@@ -727,7 +728,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 
 	mutex_lock(&power->update_lock);
 	power->voltage_uV = calibration_voltage(power);
-	pr_info("voltage_uV %d\n", power->voltage_uV);
+	//pr_info("voltage_uV %d\n", power->voltage_uV);
 	mutex_unlock(&power->update_lock);
 
 	//insert_saved_voltages(power, power->voltage_uV);
@@ -737,7 +738,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 #ifdef JUST_FOR_DEBUG
 	power->percent = 78;
 #endif
-	pr_info("percent %d\n", power->percent);
+	//pr_info("percent %d\n", power->percent);
 
 	if (power->first_delay_count < 2) {
 		power->first_delay_count = power->first_delay_count + 1;
@@ -787,12 +788,16 @@ static ssize_t backup_capacity_show(struct device *dev,
 {
 	int backup_capacity, voltage;
 	struct wm831x_power *power = dev_get_drvdata(dev);
-	struct wm831x_pdata *wm831x_pdata = dev_get_drvdata(dev->parent);
+	struct wm831x *wm831x = dev_get_drvdata(dev->parent);
+	struct wm831x_pdata *wm831x_pdata = wm831x->dev->platform_data;
 
 	mutex_lock(&power->update_lock);
 	gpio_set_value(wm831x_pdata->batt_adc_sel_gpio, 1);
+	usleep_range(1000, 2000);
 	voltage = calibration_voltage(power);
+	//pr_info("++voltage_uV %d\n", voltage);
 	gpio_set_value(wm831x_pdata->batt_adc_sel_gpio, 0);
+	usleep_range(1000, 2000);
 	mutex_unlock(&power->update_lock);
 
 	backup_capacity = calibrate_backup_battery_capability_percent(voltage);
@@ -800,7 +805,7 @@ static ssize_t backup_capacity_show(struct device *dev,
 	return sprintf(buf, "%d\n", backup_capacity);
 }
 
-static DEVICE_ATTR(backup_capacity, 0777,
+static DEVICE_ATTR(backup_capacity, 0444,
 		   backup_capacity_show, NULL);
 
 static ssize_t backup_charging_show(struct device *dev,
@@ -808,7 +813,8 @@ static ssize_t backup_charging_show(struct device *dev,
 			       char *buf)
 {
 	int backup_charging;
-	struct wm831x_pdata *wm831x_pdata = dev_get_drvdata(dev->parent);
+	struct wm831x *wm831x = dev_get_drvdata(dev->parent);
+	struct wm831x_pdata *wm831x_pdata = wm831x->dev->platform_data;
 
 	backup_charging = gpio_get_value(wm831x_pdata->backup_acok_gpio)
 			&& !gpio_get_value(wm831x_pdata->backup_chgok_gpio);
@@ -816,8 +822,18 @@ static ssize_t backup_charging_show(struct device *dev,
 	return sprintf(buf, "%d\n", backup_charging);
 }
 
-static DEVICE_ATTR(backup_charging, 0777,
+static DEVICE_ATTR(backup_charging, 0444,
 		   backup_charging_show, NULL);
+
+static struct attribute *backup_attrs[] = {
+	&dev_attr_backup_capacity.attr,
+	&dev_attr_backup_charging.attr,
+	NULL
+};
+
+static const struct attribute_group backup_attr_group = {
+	.attrs = backup_attrs,
+};
 
 static int wm831x_power_probe(struct platform_device *pdev)
 {
@@ -909,8 +925,9 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	schedule_delayed_work(&power->work, power->interval);
 
 	mutex_init(&power->update_lock);
-	device_create_file(&pdev->dev, &dev_attr_backup_capacity);
-	device_create_file(&pdev->dev, &dev_attr_backup_charging);
+//	device_create_file(&pdev->dev, &dev_attr_backup_capacity);
+//	device_create_file(&pdev->dev, &dev_attr_backup_charging);
+	sysfs_create_group(&pdev->dev.kobj, &backup_attr_group);
 
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
