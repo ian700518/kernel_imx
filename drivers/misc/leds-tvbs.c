@@ -21,6 +21,7 @@ static int led_probe(struct platform_device *pdev)
 	int ret;
 	int led_red_gpio, led_grn_gpio;
 	int batt_adc_sel_gpio;
+	int onoff_gpio;
 
 	led_red_gpio = of_get_named_gpio(np, "led-red-gpios", 0);
 	if (gpio_is_valid(led_red_gpio)) {
@@ -39,14 +40,27 @@ static int led_probe(struct platform_device *pdev)
 	}
 
 
+#if 0	/* move to drivers/power/wm831x_power.c, drivers/mfd/wm831x_i2c.c  */
 	batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
 	if (gpio_is_valid(batt_adc_sel_gpio)) {
-		ret = gpio_request_one(batt_adc_sel_gpio, GPIOF_OUT_INIT_HIGH,
+		ret = gpio_request_one(batt_adc_sel_gpio, GPIOF_OUT_INIT_LOW,
 					"Batt ADC sel");
 		if (ret)
 			pr_warn("failed to request battadc-sel-gpios gpio\n");
 	} else
 		dev_warn(dev, "no batt_adc_sel pin available\n");
+#endif
+
+#if 0
+	onoff_gpio = of_get_named_gpio(np, "onoff-gpios", 0);
+	if (gpio_is_valid(onoff_gpio)) {
+		ret = gpio_request_one(onoff_gpio, GPIOF_OUT_INIT_LOW,
+					"GPIO ON/OFF");
+		if (ret)
+			pr_warn("failed to request ON/OFF gpio\n");
+	} else
+		dev_warn(dev, "no ON/OFF GPIO available\n");
+#endif
 
 	return 0;
 }

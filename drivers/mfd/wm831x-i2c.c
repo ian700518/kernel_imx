@@ -20,6 +20,7 @@
 #include <linux/slab.h>
 #include <linux/err.h>
 #include <linux/regmap.h>
+#include <linux/of_gpio.h>
 
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/pdata.h>
@@ -249,10 +250,21 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 {
 	struct wm831x *wm831x;
 	int ret;
+	struct device_node *np = i2c->dev.of_node;
 
 	wm831x = devm_kzalloc(&i2c->dev, sizeof(struct wm831x), GFP_KERNEL);
 	if (wm831x == NULL)
 		return -ENOMEM;
+
+	/* for tvbs */
+	tvbs_wm8326_pdata.batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
+	if (gpio_is_valid(tvbs_wm8326_pdata.batt_adc_sel_gpio)) {
+		ret = gpio_request_one(tvbs_wm8326_pdata.batt_adc_sel_gpio, GPIOF_OUT_INIT_LOW,
+					"Batt ADC sel");
+		if (ret)
+			pr_warn("failed to request battadc-sel-gpios gpio\n");
+	} else
+		dev_warn(&i2c->dev, "no batt_adc_sel pin available\n");
 
 	i2c_set_clientdata(i2c, wm831x);
 	i2c->dev.platform_data = &tvbs_wm8326_pdata;

@@ -126,6 +126,9 @@ struct wm831x_pdata {
 	/** The driver should initiate a power off sequence during shutdown */
 	bool soft_shutdown;
 
+	/** gpio for tvbs, low for main battery, high for backup */
+	int batt_adc_sel_gpio;
+
 	int irq_base;
 	int gpio_base;
 	int gpio_defaults[WM831X_GPIO_NUM];

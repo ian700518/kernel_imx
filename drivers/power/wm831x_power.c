@@ -14,6 +14,9 @@
 #include <linux/power_supply.h>
 #include <linux/slab.h>
 
+#include <linux/mutex.h>
+#include <linux/of_gpio.h>
+
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/auxadc.h>
 #include <linux/mfd/wm831x/pmu.h>
@@ -41,6 +44,7 @@ struct wm831x_power {
 #define	NR_VOLTAGE	12
 	u32 saved_voltage[NR_VOLTAGE];
 	int percent_minus_update_threshold;
+	struct mutex update_lock;
 
 };
 
@@ -90,6 +94,48 @@ static battery_capacity dischargingTable[] = {
 	{3020*3000,	0},
 };
 
+static battery_capacity dischargingTable2[] = {
+	{4050*2000, 100},
+	{4035*2000,	99},
+	{4020*2000,	98},
+	{4010*2000,	97},
+	{4000*2000,	96},
+	{3990*2000,	96},
+	{3980*2000,	95},
+	{3970*2000,	92},
+	{3960*2000,	91},
+	{3950*2000,	90},
+	{3940*2000,	88},
+	{3930*2000,	86},
+	{3920*2000,	84},
+	{3910*2000,	82},
+	{3900*2000,	80},
+	{3890*2000,	74},
+	{3860*2000,	69},
+	{3830*2000,	64},
+	{3780*2000,	59},
+	{3760*2000,	54},
+	{3740*2000,	49},
+	{3720*2000,	44},
+	{3700*2000,	39},
+	{3680*2000,	34},
+	{3660*2000,	29},
+	{3640*2000,	24},
+	{3620*2000,	19},
+	{3600*2000,	14},
+	{3580*2000,	13},
+	{3560*2000,	12},
+	{3540*2000,	11},
+	{3520*2000,	10},
+	{3500*2000,	9},
+	{3480*2000,	8},
+	{3460*2000,	7},
+	{3440*2000,	6},
+	{3430*2000,	5},
+	{3420*2000,	4},
+	{3020*2000,	0},
+};
+
 static int get_mean_voltages(struct wm831x_power *power)
 {
 	int i, j;
@@ -137,6 +183,30 @@ u32 calibrate_battery_capability_percent(struct wm831x_power *power)
 //	}
 	for (i = 0; i < tableSize; i++) {
 		if (power->voltage_uV >= pTable[i].voltage)
+			return	pTable[i].percent;
+	}
+
+	return 0;
+}
+
+u32 calibrate_backup_battery_capability_percent(int voltage_uV)
+{
+	u8 i;
+	pbattery_capacity pTable;
+	u32 tableSize;
+
+	/* ONLY discharging */
+//	if (power->battery_status == POWER_SUPPLY_STATUS_DISCHARGING) {
+		pTable = dischargingTable2;
+		tableSize = sizeof(dischargingTable2)/
+			sizeof(dischargingTable2[0]);
+//	} else {
+//		pTable = chargingTable;
+//		tableSize = sizeof(chargingTable)/
+//			sizeof(chargingTable[0]);
+//	}
+	for (i = 0; i < tableSize; i++) {
+		if (voltage_uV >= pTable[i].voltage)
 			return	pTable[i].percent;
 	}
 
@@ -538,6 +608,9 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = wm831x_power->percent < 0 ? 0 :
 				(wm831x_power->percent > 100 ? 100 : wm831x_power->percent);
+#ifdef JUST_FOR_DEBUG
+		val->intval = 78;
+#endif
 		pr_info("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
@@ -652,13 +725,18 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	u32 voltage = 0;
 	int ret;
 
+	mutex_lock(&power->update_lock);
 	power->voltage_uV = calibration_voltage(power);
-	pr_debug("voltage_uV %d\n", power->voltage_uV);
+	pr_info("voltage_uV %d\n", power->voltage_uV);
+	mutex_unlock(&power->update_lock);
 
 	//insert_saved_voltages(power, power->voltage_uV);
 	//power->voltage_uV = get_mean_voltages(power);
 	//pr_debug("voltage_uV mean %d\n", power->voltage_uV);
 	power->percent = calibrate_battery_capability_percent(power);
+#ifdef JUST_FOR_DEBUG
+	power->percent = 78;
+#endif
 	pr_info("percent %d\n", power->percent);
 
 	if (power->first_delay_count < 2) {
@@ -702,6 +780,28 @@ static void wm831x_battery_work(struct work_struct *w)
 	/* reschedule for the next time */
 	schedule_delayed_work(&power->work, power->interval);
 }
+
+static ssize_t backup_capacity_show(struct device *dev,
+			       struct device_attribute *attr,
+			       char *buf)
+{
+	int backup_capacity, voltage;
+	struct wm831x_power *power = dev_get_drvdata(dev);
+	struct wm831x_pdata *wm831x_pdata = dev_get_drvdata(dev->parent);
+
+	mutex_lock(&power->update_lock);
+	gpio_set_value(wm831x_pdata->batt_adc_sel_gpio, 1);
+	voltage = calibration_voltage(power);
+	gpio_set_value(wm831x_pdata->batt_adc_sel_gpio, 0);
+	mutex_unlock(&power->update_lock);
+
+	backup_capacity = calibrate_backup_battery_capability_percent(voltage);
+
+	return sprintf(buf, "%d\n", backup_capacity);
+}
+
+static DEVICE_ATTR(backup_capacity, 0777,
+		   backup_capacity_show, NULL);
 
 static int wm831x_power_probe(struct platform_device *pdev)
 {
@@ -791,6 +891,9 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	power->first_delay_count = 0;
 	INIT_DELAYED_WORK(&power->work, wm831x_battery_work);
 	schedule_delayed_work(&power->work, power->interval);
+
+	mutex_init(&power->update_lock);
+	device_create_file(&pdev->dev, &dev_attr_backup_capacity);
 
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
