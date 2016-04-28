@@ -612,6 +612,7 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 #ifdef JUST_FOR_DEBUG
 		val->intval = 78;
 #endif
+		val->intval = (val->intval > 10) ? val->intval : 11;
 		//pr_info("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
@@ -738,6 +739,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 #ifdef JUST_FOR_DEBUG
 	power->percent = 78;
 #endif
+	power->percent = (power->percent) > 10 ? power->percent : 11;
 	//pr_info("percent %d\n", power->percent);
 
 	if (power->first_delay_count < 2) {
