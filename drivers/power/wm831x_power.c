@@ -818,7 +818,7 @@ static ssize_t backup_charging_show(struct device *dev,
 	struct wm831x *wm831x = dev_get_drvdata(dev->parent);
 	struct wm831x_pdata *wm831x_pdata = wm831x->dev->platform_data;
 
-	backup_charging = gpio_get_value(wm831x_pdata->backup_acok_gpio)
+	backup_charging = !gpio_get_value(wm831x_pdata->backup_acok_gpio)
 			&& !gpio_get_value(wm831x_pdata->backup_chgok_gpio);
 
 	return sprintf(buf, "%d\n", backup_charging);
