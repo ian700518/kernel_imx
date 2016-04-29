@@ -14,6 +14,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/irq.h>
 #include <linux/i2c.h>
 #include <linux/delay.h>
 #include <linux/mfd/core.h>
@@ -245,6 +246,11 @@ static struct wm831x_pdata tvbs_wm8326_pdata = {
 	.post_init = wm8326_post_init,
 };
 
+static irqreturn_t gpio_acok_irq_handler(int irq, void *dev_id)
+{
+	return IRQ_HANDLED;
+}
+
 static int wm831x_i2c_probe(struct i2c_client *i2c,
 			    const struct i2c_device_id *id)
 {
@@ -272,6 +278,17 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 					"backup ACOK");
 		if (ret)
 			pr_warn("failed to request backup battery ACOK gpio\n");
+		else {
+			ret = request_threaded_irq(gpio_to_irq(tvbs_wm8326_pdata.backup_acok_gpio), NULL,
+				   gpio_acok_irq_handler,
+				   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+				   "gpio_acok_irq", NULL);
+			if (ret) {
+				dev_warn(&i2c->dev, "gpio ACOK irq handler not requested\n");
+			} else {
+				enable_irq_wake(gpio_to_irq(tvbs_wm8326_pdata.backup_acok_gpio));
+			}
+		}
 	} else
 		dev_warn(&i2c->dev, "no backup battery ACOK gpio pin available\n");
 
