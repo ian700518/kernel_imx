@@ -40,6 +40,15 @@ static int led_probe(struct platform_device *pdev)
 	}
 
 
+	int uhfcs_gpio = of_get_named_gpio(np, "uhfcs-gpios", 0);
+	if (gpio_is_valid(uhfcs_gpio)) {
+		ret = gpio_request_one(uhfcs_gpio, GPIOF_IN,
+				"uhfcs gpios");
+		if (ret)
+			pr_warn("failed to request uhfcs gpio\n");
+		else
+			gpio_export(uhfcs_gpio, true);
+	}
 #if 0	/* move to drivers/power/wm831x_power.c, drivers/mfd/wm831x_i2c.c  */
 	batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
 	if (gpio_is_valid(batt_adc_sel_gpio)) {

@@ -178,6 +178,7 @@
 		led-red-gpios = <&gpio4 16 GPIO_ACTIVE_HIGH>;
 		led-grn-gpios = <&gpio4 19 GPIO_ACTIVE_HIGH>;
 		onoff-gpios = <&gpio3 10 0>;
+		uhfcs-gpios = <&gpio4 31 0>;
 		status = "okay";
 	};
 
@@ -603,6 +604,7 @@
 				MX6QDL_PAD_EIM_DA10__GPIO3_IO10		0x100b1		/* GPIO ON/OFF */
 				MX6QDL_PAD_CSI0_DAT18__GPIO6_IO04    0x80000000		/* nCHGOK */
 				MX6QDL_PAD_CSI0_DAT19__GPIO6_IO05    0x80000000		/* nACOK */
+				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31   0x80000000
 			>;
 		};
 
