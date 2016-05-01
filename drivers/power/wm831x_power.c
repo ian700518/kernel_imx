@@ -796,7 +796,9 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 
 	mutex_lock(&power->update_lock);
 	power->voltage_uV = calibration_voltage(power);
-	//pr_info("voltage_uV %d\n", power->voltage_uV);
+#ifdef	DEBUG_BATT
+	pr_info("voltage_uV %d\n", power->voltage_uV);
+#endif
 	power->percent = calibrate_backup_battery_capability_percent(power);
 	mutex_unlock(&power->update_lock);
 
@@ -804,7 +806,9 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	power->percent = 78;
 #endif
 	power->percent = (power->percent) > 10 ? power->percent : 11;
+#ifdef	DEBUG_BATT
 	pr_info("percent %d\n", power->percent);
+#endif
 
 	if (power->first_delay_count < 2) {
 		power->first_delay_count = power->first_delay_count + 1;
@@ -814,6 +818,10 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	}
 
 	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING) {
+#ifdef	DEBUG_BATT
+		printk("charging percent %d, old_percent %d\n",
+			power->percent, power->old_percent);
+#endif
 		if (power->percent < power->old_percent) {
 			power->percent = power->old_percent;
 			power->percent_plus_update_threshold = 0;
@@ -821,7 +829,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 			power->percent_plus_update_threshold++;
 		}
 
-		if (power->percent_minus_update_threshold >=
+		if (power->percent_plus_update_threshold >=
 			PERCENT_UPDATE_THRESHOLD_COUNT) {
 			power->old_percent++;// = power->percent;
 			power->percent = power->old_percent;
@@ -831,6 +839,10 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 			power->percent_plus_update_threshold = 0;
 		}
 	} else {
+#ifdef	DEBUG_BATT
+		printk("discharging percent %d, old_percent %d\n",
+			power->percent, power->old_percent);
+#endif
 		if (power->percent > power->old_percent) {
 			power->percent = power->old_percent;
 			power->percent_minus_update_threshold = 0;
@@ -1041,6 +1053,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	power->have_battery = 1;	/* force to have battery, Robby */
 	power->old_percent = 100;
 	power->percent_minus_update_threshold = 0;
+	power->percent_plus_update_threshold = 0;
 	for (i = 0; i < NR_VOLTAGE; i++)
 		power->saved_voltage[i] = 0;
 
@@ -1202,7 +1215,7 @@ static int wm831x_resume(struct platform_device *pdev)
 	if (power) {
 		wm831x_pdata = power->wm831x->dev->platform_data;
 
-		if (power->acok_in==false && device_may_wakeup(&pdev->dev)) {
+		if (device_may_wakeup(&pdev->dev)) {
 			irq = gpio_to_irq(wm831x_pdata->backup_acok_gpio);
 			disable_irq_wake(irq);
 		}
