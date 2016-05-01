@@ -259,7 +259,7 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 	/* for tvbs */
 	tvbs_wm8326_pdata.batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
 	if (gpio_is_valid(tvbs_wm8326_pdata.batt_adc_sel_gpio)) {
-		ret = gpio_request_one(tvbs_wm8326_pdata.batt_adc_sel_gpio, GPIOF_OUT_INIT_LOW,
+		ret = gpio_request_one(tvbs_wm8326_pdata.batt_adc_sel_gpio, GPIOF_OUT_INIT_HIGH,
 					"Batt ADC sel");
 		if (ret)
 			pr_warn("failed to request battadc-sel-gpios gpio\n");
