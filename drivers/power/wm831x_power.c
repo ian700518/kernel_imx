@@ -26,7 +26,8 @@
 
 #define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
 #define ADC_SAMPLE_COUNT	6
-#define PERCENT_UPDATE_THRESHOLD_COUNT	3
+#define PERCENT_UPDATE_THRESHOLD_COUNT	5
+/*#define DEBUG_BATT*/
 
 struct wm831x_power {
 	struct wm831x *wm831x;
@@ -1222,6 +1223,7 @@ static int wm831x_resume(struct platform_device *pdev)
 
 		acok_in = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
 		if (acok_in != power->acok_in) {
+
 			power->acok_in = acok_in;
 			dev_info(power->wm831x->dev, "Charger %s.\n", acok_in ?
 					"Connected" : "Disconnected");
