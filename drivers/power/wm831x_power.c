@@ -50,7 +50,7 @@ struct wm831x_power {
 	int percent_minus_update_threshold;
 	int percent_plus_update_threshold;
 	struct mutex update_lock;
-
+	bool acok_in;
 };
 
 typedef struct {
@@ -810,6 +810,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 		power->first_delay_count = power->first_delay_count + 1;
 		power->old_percent = power->percent;
 		power_supply_changed(&power->battery);
+		power_supply_changed(&power->wall);
 	}
 
 	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING) {
@@ -825,6 +826,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 			power->old_percent++;// = power->percent;
 			power->percent = power->old_percent;
 			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
 
 			power->percent_plus_update_threshold = 0;
 		}
@@ -841,6 +843,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 			power->old_percent--;// = power->percent;
 			power->percent = power->old_percent;
 			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
 
 			power->percent_minus_update_threshold = 0;
 		}
@@ -948,10 +951,22 @@ static const struct attribute_group backup_attr_group = {
 static irqreturn_t gpio_acok_irq_handler(int irq, void *data)
 {
 	struct wm831x_power *power = data;
+	struct wm831x_pdata *wm831x_pdata = power->wm831x->dev->platform_data;
+	bool acok_in = false;
 
 //	schedule_work(&power->work_acok);
+	acok_in = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
+
+	if (acok_in == power->acok_in)
+		return IRQ_HANDLED;
+
+	power->acok_in = acok_in;
+	dev_info(power->wm831x->dev, "Charger %s.\n", acok_in ?
+			"Connected" : "Disconnected");
+
 	wm831x_bat_check_status(power->wm831x, &power->battery_status);
 	power_supply_changed(&power->battery);
+	power_supply_changed(&power->wall);
 
 	return IRQ_HANDLED;
 }
@@ -1052,14 +1067,16 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	sysfs_create_group(&pdev->dev.kobj, &backup_attr_group);
 
 	if (gpio_is_valid(wm831x_pdata->backup_acok_gpio)) {
+		power->acok_in = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
+
 		ret = request_threaded_irq(gpio_to_irq(wm831x_pdata->backup_acok_gpio), NULL,
 			   gpio_acok_irq_handler,
-			   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+			   IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING | IRQF_ONESHOT,
 			   "gpio_acok_irq", power);
 		if (ret) {
 			dev_warn(&pdev->dev, "gpio ACOK irq handler not requested\n");
 		} else {
-			enable_irq_wake(gpio_to_irq(wm831x_pdata->backup_acok_gpio));
+			;//enable_irq_wake(gpio_to_irq(wm831x_pdata->backup_acok_gpio));
 		}
 	}
 #if 0	/* no irq for pmic on tvbs */
@@ -1155,9 +1172,63 @@ static int wm831x_power_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int wm831x_suspend(struct platform_device *pdev,
+				  pm_message_t state)
+{
+	struct wm831x_power *power = platform_get_drvdata(pdev);
+	struct wm831x_pdata *wm831x_pdata;
+	int irq;
+
+	if (power) {
+		wm831x_pdata = power->wm831x->dev->platform_data;
+
+		if (power->acok_in==false && device_may_wakeup(&pdev->dev)) {
+			irq = gpio_to_irq(wm831x_pdata->backup_acok_gpio);
+			enable_irq_wake(irq);
+		}
+		cancel_delayed_work(&power->work);
+	}
+
+	return 0;
+}
+
+static int wm831x_resume(struct platform_device *pdev)
+{
+	struct wm831x_power *power = platform_get_drvdata(pdev);
+	struct wm831x_pdata *wm831x_pdata;
+	int irq;
+	bool acok_in = false;
+
+	if (power) {
+		wm831x_pdata = power->wm831x->dev->platform_data;
+
+		if (power->acok_in==false && device_may_wakeup(&pdev->dev)) {
+			irq = gpio_to_irq(wm831x_pdata->backup_acok_gpio);
+			disable_irq_wake(irq);
+		}
+
+		acok_in = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
+		if (acok_in != power->acok_in) {
+			power->acok_in = acok_in;
+			dev_info(power->wm831x->dev, "Charger %s.\n", acok_in ?
+					"Connected" : "Disconnected");
+
+			wm831x_bat_check_status(power->wm831x, &power->battery_status);
+			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
+		}
+
+		schedule_delayed_work(&power->work, power->interval);
+	}
+
+	return 0;
+}
+
 static struct platform_driver wm831x_power_driver = {
 	.probe = wm831x_power_probe,
 	.remove = wm831x_power_remove,
+	.suspend = wm831x_suspend,
+	.resume = wm831x_resume,
 	.driver = {
 		.name = "wm831x-power",
 	},
