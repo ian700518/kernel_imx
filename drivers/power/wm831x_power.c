@@ -8,6 +8,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/irq.h>
 #include <linux/module.h>
 #include <linux/err.h>
 #include <linux/platform_device.h>
@@ -37,6 +38,7 @@ struct wm831x_power {
 	char battery_name[20];
 	bool have_battery;
 	struct delayed_work work;
+//	struct work_struct work_acok;
 	unsigned int interval;
 	int voltage_uV;
 	int percent;
@@ -730,17 +732,17 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	mutex_lock(&power->update_lock);
 	power->voltage_uV = calibration_voltage(power);
 	//pr_info("voltage_uV %d\n", power->voltage_uV);
+	power->percent = calibrate_battery_capability_percent(power);
 	mutex_unlock(&power->update_lock);
 
 	//insert_saved_voltages(power, power->voltage_uV);
 	//power->voltage_uV = get_mean_voltages(power);
 	//pr_debug("voltage_uV mean %d\n", power->voltage_uV);
-	power->percent = calibrate_battery_capability_percent(power);
 #ifdef JUST_FOR_DEBUG
 	power->percent = 78;
 #endif
 	power->percent = (power->percent) > 10 ? power->percent : 11;
-	//pr_info("percent %d\n", power->percent);
+	pr_info("percent %d\n", power->percent);
 
 	if (power->first_delay_count < 2) {
 		power->first_delay_count = power->first_delay_count + 1;
@@ -783,6 +785,22 @@ static void wm831x_battery_work(struct work_struct *w)
 	/* reschedule for the next time */
 	schedule_delayed_work(&power->work, power->interval);
 }
+
+#if 0
+static void acok_work(struct work_struct *w)
+{
+	struct wm831x_power *power;
+
+	power = container_of(w, struct wm831x_power, work_acok);
+	mutex_lock(&power->update_lock);
+	power->voltage_uV = calibration_voltage(power);
+	//pr_info("voltage_uV %d\n", power->voltage_uV);
+	power->old_percent = power->percent =
+			calibrate_battery_capability_percent(power);
+	power_supply_changed(&power->battery);
+	mutex_unlock(&power->update_lock);
+}
+#endif
 
 static ssize_t backup_capacity_show(struct device *dev,
 			       struct device_attribute *attr,
@@ -836,6 +854,15 @@ static struct attribute *backup_attrs[] = {
 static const struct attribute_group backup_attr_group = {
 	.attrs = backup_attrs,
 };
+
+static irqreturn_t gpio_acok_irq_handler(int irq, void *data)
+{
+	struct wm831x_power *power = data;
+
+//	schedule_work(&power->work_acok);
+
+	return IRQ_HANDLED;
+}
 
 static int wm831x_power_probe(struct platform_device *pdev)
 {
@@ -924,6 +951,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 
 	power->first_delay_count = 0;
 	INIT_DELAYED_WORK(&power->work, wm831x_battery_work);
+//	INIT_WORK(&power->work_acok, acok_work);
 	schedule_delayed_work(&power->work, power->interval);
 
 	mutex_init(&power->update_lock);
@@ -931,6 +959,17 @@ static int wm831x_power_probe(struct platform_device *pdev)
 //	device_create_file(&pdev->dev, &dev_attr_backup_charging);
 	sysfs_create_group(&pdev->dev.kobj, &backup_attr_group);
 
+	if (gpio_is_valid(wm831x_pdata->backup_acok_gpio)) {
+		ret = request_threaded_irq(gpio_to_irq(wm831x_pdata->backup_acok_gpio), NULL,
+			   gpio_acok_irq_handler,
+			   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+			   "gpio_acok_irq", power);
+		if (ret) {
+			dev_warn(&pdev->dev, "gpio ACOK irq handler not requested\n");
+		} else {
+			enable_irq_wake(gpio_to_irq(wm831x_pdata->backup_acok_gpio));
+		}
+	}
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
 	ret = request_threaded_irq(irq, NULL, wm831x_syslo_irq,
