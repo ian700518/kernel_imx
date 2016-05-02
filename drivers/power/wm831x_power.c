@@ -260,6 +260,13 @@ static int backup_battery_is_charging(struct wm831x_pdata *wm831x_pdata)
 			&& !gpio_get_value(wm831x_pdata->backup_chgok_gpio));
 }
 
+static int backup_battery_is_charging_full(struct wm831x_pdata *wm831x_pdata)
+{
+
+	return (!gpio_get_value(wm831x_pdata->backup_acok_gpio)
+			&& gpio_get_value(wm831x_pdata->backup_chgok_gpio));
+}
+
 #if 0
 static int wm831x_power_check_online(struct wm831x *wm831x, int supply,
 				     union power_supply_propval *val)
@@ -544,6 +551,8 @@ static int wm831x_bat_check_status(struct wm831x *wm831x, int *status)
 
 	if (backup_battery_is_charging(wm831x_pdata))
 		*status = POWER_SUPPLY_STATUS_CHARGING;
+	else if (backup_battery_is_charging_full(wm831x_pdata))
+		*status = POWER_SUPPLY_STATUS_FULL;
 	else
 		*status = POWER_SUPPLY_STATUS_DISCHARGING;
 
@@ -818,10 +827,17 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 		power_supply_changed(&power->wall);
 	}
 
-	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING) {
+	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING ||
+	    power->battery_status == POWER_SUPPLY_STATUS_FULL) {
 #ifdef	DEBUG_BATT
-		printk("charging percent %d, old_percent %d\n",
-			power->percent, power->old_percent);
+		if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING)
+			printk("charging percent %d, old_percent %d\n",
+				power->percent, power->old_percent);
+		else {
+			printk("charging FULL: percent %d, old_percent %d\n",
+				power->percent, power->old_percent);
+			power->percent = 100;
+		}
 #endif
 		if (power->percent < power->old_percent) {
 			power->percent = power->old_percent;
@@ -839,7 +855,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 
 			power->percent_plus_update_threshold = 0;
 		}
-	} else {
+	} else if (power->battery_status == POWER_SUPPLY_STATUS_DISCHARGING) {
 #ifdef	DEBUG_BATT
 		printk("discharging percent %d, old_percent %d\n",
 			power->percent, power->old_percent);
@@ -861,7 +877,6 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 			power->percent_minus_update_threshold = 0;
 		}
 	}
-
 }
 
 static void wm831x_battery_work(struct work_struct *w)
