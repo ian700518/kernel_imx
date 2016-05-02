@@ -685,8 +685,8 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 		val->intval = POWER_SUPPLY_TYPE_BATTERY;	// TODO
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-		val->intval = wm831x_power->percent < 0 ? 0 :
-				(wm831x_power->percent > 100 ? 100 : wm831x_power->percent);
+		val->intval = wm831x_power->old_percent < 0 ? 0 :
+				(wm831x_power->old_percent > 100 ? 100 : wm831x_power->old_percent);
 #ifdef JUST_FOR_DEBUG
 		val->intval = 78;
 #endif
