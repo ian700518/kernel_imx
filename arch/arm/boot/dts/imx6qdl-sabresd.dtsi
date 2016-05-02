@@ -78,9 +78,7 @@
 		reg_audio: regulator@2 {
 			compatible = "regulator-fixed";
 			reg = <2>;
-			regulator-name = "wm8960-supply";
-			gpio = <&gpio2 9 0>;
-			enable-active-low;
+			regulator-name = "dummy-supply";
 		};
 
 		reg_mipi_dsi_pwr_on: mipi_dsi_pwr_on {
@@ -93,12 +91,7 @@
 		reg_sensor: regulator@3 {
 			compatible = "regulator-fixed";
 			reg = <3>;
-			regulator-name = "sensor-supply";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio2 9 0>;
-			startup-delay-us = <500>;
-			enable-active-low;
+			regulator-name = "dummy2-supply";
 		};
 
 		reg_gps: regulator@4 {
@@ -502,17 +495,12 @@
 	sht3x@44 {
 		compatible = "sensirion,sht3x";
 		reg = <0x44>;
-		VSENSOR-supply = <&reg_sensor>;
-		interrupt-parent = <&gpio5>;
-		interrupts = <25 8>;
-		shared-interrupt;
 	};
 
 	mpl3115@60 {
 		compatible = "fsl,mpl3115";
 		reg = <0x60>;
 		position = <3>;
-		VSENSOR-supply = <&reg_sensor>;
 		interrupt-parent = <&gpio5>;
 		interrupts = <25 8>;
 		shared-interrupt;

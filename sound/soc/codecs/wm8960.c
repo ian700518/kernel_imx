@@ -1174,6 +1174,7 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
 			return -EPROBE_DEFER;
 	}
 
+#if 0
 	for (i = 0; i < ARRAY_SIZE(wm8960->supplies); i++)
 		wm8960->supplies[i].supply = wm8960_supply_names[i];
 
@@ -1190,6 +1191,7 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
 		dev_err(&i2c->dev, "Failed to enable supplies: %d\n", ret);
 		return -EPROBE_DEFER;
 	}
+#endif
 
 	wm8960->regmap = devm_regmap_init_i2c(i2c, &wm8960_regmap);
 	if (IS_ERR(wm8960->regmap))
