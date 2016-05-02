@@ -15,6 +15,7 @@
 #include <linux/power_supply.h>
 #include <linux/slab.h>
 
+#include <linux/input.h>
 #include <linux/mutex.h>
 #include <linux/of_gpio.h>
 #include <linux/delay.h>
@@ -53,6 +54,7 @@ struct wm831x_power {
 	int percent_plus_update_threshold;
 	struct mutex update_lock;
 	bool acok_in;
+	struct input_dev *idev;
 };
 
 typedef struct {
@@ -989,6 +991,9 @@ static irqreturn_t gpio_acok_irq_handler(int irq, void *data)
 	if (acok_in == power->acok_in)
 		return IRQ_HANDLED;
 
+	input_event(power->idev, EV_KEY, KEY_HIRAGANA, acok_in);
+	input_sync(power->idev);
+
 	power->acok_in = acok_in;
 	dev_info(power->wm831x->dev, "Charger %s.\n", acok_in ?
 			"Connected" : "Disconnected");
@@ -1109,6 +1114,27 @@ static int wm831x_power_probe(struct platform_device *pdev)
 			;//enable_irq_wake(gpio_to_irq(wm831x_pdata->backup_acok_gpio));
 		}
 	}
+
+	/* Register input device for MAIN battery Plugin/Plugout */
+	power->idev = devm_input_allocate_device(&pdev->dev);
+	if (!power->idev) {
+		dev_err(&pdev->dev, "%s: failed to allocate input\n", __func__);
+		return -ENOMEM;
+	}
+	power->idev->name = "MAIN-Battery/ACOK-IDEV";
+	power->idev->phys = "MAIN-Battery/ACOK";
+	power->idev->dev.parent = &pdev->dev;
+
+	__set_bit(EV_REP, power->idev->evbit);
+
+	input_set_capability(power->idev, EV_KEY, KEY_HIRAGANA);
+
+	ret = input_register_device(power->idev);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "Cannot register input device error(%d)\n",
+				ret);
+		return ret;
+	}
 #if 0	/* no irq for pmic on tvbs */
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
 	ret = request_threaded_irq(irq, NULL, wm831x_syslo_irq,
@@ -1193,6 +1219,7 @@ static int wm831x_power_remove(struct platform_device *pdev)
 	irq = wm831x_irq(wm831x, platform_get_irq_byname(pdev, "SYSLO"));
 	free_irq(irq, wm831x_power);
 #endif
+	input_unregister_device(wm831x_power->idev);
 
 	if (wm831x_power->have_battery)
 		power_supply_unregister(&wm831x_power->battery);
