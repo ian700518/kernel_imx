@@ -766,6 +766,7 @@ static int ldb_probe(struct platform_device *pdev)
 		if (ret)
 			pr_warn("failed to request LCD power enable gpio\n");
 	}
+	gpio_export(pwren_gpio, 0);
 
 	lcdrev = of_get_named_gpio(np, "lcdrev-gpios", 0);
 	if (gpio_is_valid(lcdrev)) {
@@ -774,6 +775,7 @@ static int ldb_probe(struct platform_device *pdev)
 		if (ret)
 			pr_warn("failed to request LCD REV gpio\n");
 	}
+	gpio_export(lcdrev, 0);
 
 #if 0
 	blten_gpio = of_get_named_gpio(np, "blten-gpios", 0);
