@@ -1678,6 +1678,7 @@ static int regulator_ena_gpio_request(struct regulator_dev *rdev,
 	}
 
 	pin->gpio = config->ena_gpio;
+	gpio_export(pin->gpio, 0);
 	pin->ena_gpio_invert = config->ena_gpio_invert;
 	list_add(&pin->list, &regulator_ena_gpio_list);
 
@@ -1699,6 +1700,7 @@ static void regulator_ena_gpio_free(struct regulator_dev *rdev)
 		if (pin->gpio == rdev->ena_pin->gpio) {
 			if (pin->request_count <= 1) {
 				pin->request_count = 0;
+				gpio_unexport(pin->gpio);
 				gpio_free(pin->gpio);
 				list_del(&pin->list);
 				kfree(pin);
