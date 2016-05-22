@@ -45,7 +45,7 @@
 #define MAG3110_ID                      0xC4
 
 
-#define MAG3110_POSITION_DEFAULT	2
+#define MAG3110_POSITION_DEFAULT	5
 #define MAG3110_DELAY_DEFAULT		200
 
 #define MAG3110_BUF_SIZE   			6
