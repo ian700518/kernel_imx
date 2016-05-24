@@ -63,12 +63,13 @@ static int led_probe(struct platform_device *pdev)
 #if 0
 	onoff_gpio = of_get_named_gpio(np, "onoff-gpios", 0);
 	if (gpio_is_valid(onoff_gpio)) {
-		ret = gpio_request_one(onoff_gpio, GPIOF_OUT_INIT_LOW,
+		ret = gpio_request_one(onoff_gpio, GPIOF_OUT_INIT_HIGH,
 					"GPIO ON/OFF");
 		if (ret)
 			pr_warn("failed to request ON/OFF gpio\n");
 	} else
 		dev_warn(dev, "no ON/OFF GPIO available\n");
+	gpio_export(onoff_gpio, 0);
 #endif
 
 	return 0;
