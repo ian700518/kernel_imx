@@ -408,7 +408,7 @@ static ssize_t gpio_value_store(struct device *dev,
 	return status;
 }
 
-static DEVICE_ATTR(value, 0644,
+static DEVICE_ATTR(value, 0666,
 		gpio_value_show, gpio_value_store);
 
 static irqreturn_t gpio_sysfs_irq(int irq, void *priv)
