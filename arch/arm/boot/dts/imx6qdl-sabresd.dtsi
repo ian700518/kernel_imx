@@ -392,8 +392,10 @@
 &clks {
 	fsl,ldb-di0-parent = <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
 	fsl,ldb-di1-parent = <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
+/*
 	assigned-clocks = <&clks IMX6QDL_CLK_CKO1>;
 	assigned-clock-rates = <12288000>;
+*/
 };
 
 &ecspi1 {
@@ -535,7 +537,7 @@
 		pwn-gpios = <&gpio5 17 1>;   /* active low: SD1_DAT0 */
 		rst-gpios = <&gpio4 10 0>;   /* active high: KEY_COL2 */
 		csi_id = <1>;
-		mclk = <24000000>;
+		mclk = <24750000>;
 		mclk_source = <0>;
 	};
 
@@ -974,6 +976,9 @@
 };
 
 &ssi2 {
+	assigned-clocks = <&clks IMX6QDL_CLK_SSI2_SEL>;
+	assigned-clock-parents = <&clks IMX6QDL_CLK_PLL4_AUDIO_DIV>;
+	assigned-clock-rates = <0>;
 	fsl,mode = "i2s-slave";
 	status = "okay";
 };
