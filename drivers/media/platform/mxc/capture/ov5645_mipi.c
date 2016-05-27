@@ -45,7 +45,7 @@
 #define DEFAULT_FPS 30
 
 #define OV5645_XCLK_MIN 6000000
-#define OV5645_XCLK_MAX 24000000
+#define OV5645_XCLK_MAX 27000000
 
 #define OV5645_CHIP_ID_HIGH_BYTE	0x300A
 #define OV5645_CHIP_ID_LOW_BYTE		0x300B
@@ -763,15 +763,19 @@ static int OV5645_get_sysclk(void)
 
 	temp1 = ov5645_read_reg(0x3036, &temp);
 	Multiplier = temp1;
+//	printk("Multiplier %08x\n", Multiplier);
 
 	temp1 = ov5645_read_reg(0x3037, &temp);
 	PreDiv = temp1 & 0x0f;
+//	printk("PreDiv %08x\n", PreDiv);
 	Pll_rdiv = ((temp1 >> 4) & 0x01) + 1;
 
 	temp1 = ov5645_read_reg(0x3108, &temp);
 	temp2 = temp1 & 0x03;
 	sclk_rdiv = sclk_rdiv_map[temp2];
 
+//	printk("preDiv %d, SysDiv %d, Pll_rdiv %d, Bit_div2x %d, sclk_rdiv %d \n",
+//		PreDiv, SysDiv, Pll_rdiv, Bit_div2x, sclk_rdiv);
 	VCO = xvclk * Multiplier / PreDiv;
 
 	sysclk = VCO / SysDiv / Pll_rdiv * 2 / Bit_div2x / sclk_rdiv;
@@ -934,6 +938,7 @@ static void OV5645_set_bandingfilter(void)
 	/* read preview VTS */
 	prev_VTS = OV5645_get_VTS();
 
+//	printk("prev_HTS %d, prev_VTS %d, prev_sysclk %d \n", prev_HTS, prev_VTS, prev_sysclk);
 	/* calculate banding filter */
 	/* 60Hz */
 	band_step60 = prev_sysclk * 100/prev_HTS * 100/120;
