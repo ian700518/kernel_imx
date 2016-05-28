@@ -26,7 +26,7 @@
 #include <linux/mfd/wm831x/pdata.h>
 
 #define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
-#define ADC_SAMPLE_COUNT	6
+#define ADC_SAMPLE_COUNT	20
 #define PERCENT_UPDATE_THRESHOLD_COUNT	5
 #define DEVIATION_FACTOR	50
 /*#define DEBUG_BATT*/
@@ -48,8 +48,9 @@ struct wm831x_power {
 	int old_percent;
 	int first_delay_count;
 	int battery_status;
-#define	NR_VOLTAGE	12
-	u32 saved_voltage[NR_VOLTAGE];
+#define	NR_VOLTAGE	18
+	u32 saved_voltage_main[NR_VOLTAGE];
+	u32 saved_voltage_backup[NR_VOLTAGE];
 	int percent_minus_update_threshold;
 	int percent_plus_update_threshold;
 	struct mutex update_lock;
@@ -62,6 +63,7 @@ typedef struct {
 	u32 percent;
 } battery_capacity , *pbattery_capacity;
 
+#if 0
 static battery_capacity chargingTable_backup[] = {
 	{(4050-DEVIATION_FACTOR)*2000,	99},
 	{(4040-DEVIATION_FACTOR)*2000,	98},
@@ -102,93 +104,110 @@ static battery_capacity chargingTable_backup[] = {
 	{(3420-DEVIATION_FACTOR)*2000,	4},
 	{(3020-DEVIATION_FACTOR)*2000,	0},
 };
+#endif
 
 static battery_capacity dischargingTable_backup[] = {
-	{(4050-DEVIATION_FACTOR)*2000, 100},
-	{(4035-DEVIATION_FACTOR)*2000,	99},
-	{(4020-DEVIATION_FACTOR)*2000,	98},
-	{(4010-DEVIATION_FACTOR)*2000,	97},
-	{(4000-DEVIATION_FACTOR)*2000,	96},
-	{(3990-DEVIATION_FACTOR)*2000,	96},
-	{(3980-DEVIATION_FACTOR)*2000,	95},
-	{(3970-DEVIATION_FACTOR)*2000,	92},
-	{(3960-DEVIATION_FACTOR)*2000,	91},
-	{(3950-DEVIATION_FACTOR)*2000,	90},
-	{(3940-DEVIATION_FACTOR)*2000,	88},
-	{(3930-DEVIATION_FACTOR)*2000,	86},
-	{(3920-DEVIATION_FACTOR)*2000,	84},
-	{(3910-DEVIATION_FACTOR)*2000,	82},
-	{(3900-DEVIATION_FACTOR)*2000,	80},
-	{(3890-DEVIATION_FACTOR)*2000,	74},
-	{(3860-DEVIATION_FACTOR)*2000,	69},
-	{(3830-DEVIATION_FACTOR)*2000,	64},
-	{(3780-DEVIATION_FACTOR)*2000,	59},
-	{(3760-DEVIATION_FACTOR)*2000,	54},
-	{(3740-DEVIATION_FACTOR)*2000,	49},
-	{(3720-DEVIATION_FACTOR)*2000,	44},
-	{(3700-DEVIATION_FACTOR)*2000,	39},
-	{(3680-DEVIATION_FACTOR)*2000,	34},
-	{(3660-DEVIATION_FACTOR)*2000,	29},
-	{(3640-DEVIATION_FACTOR)*2000,	24},
-	{(3620-DEVIATION_FACTOR)*2000,	19},
-	{(3600-DEVIATION_FACTOR)*2000,	14},
-	{(3580-DEVIATION_FACTOR)*2000,	13},
-	{(3560-DEVIATION_FACTOR)*2000,	12},
-	{(3540-DEVIATION_FACTOR)*2000,	11},
-	{(3520-DEVIATION_FACTOR)*2000,	10},
-	{(3500-DEVIATION_FACTOR)*2000,	9},
-	{(3480-DEVIATION_FACTOR)*2000,	8},
-	{(3460-DEVIATION_FACTOR)*2000,	7},
-	{(3440-DEVIATION_FACTOR)*2000,	6},
-	{(3430-DEVIATION_FACTOR)*2000,	5},
-	{(3420-DEVIATION_FACTOR)*2000,	4},
-	{(3020-DEVIATION_FACTOR)*2000,	0},
+	{8111918, 100},	// 8.4V
+	{8017783, 90},	// 8.3V
+	{7923448, 80},	// 8.2V
+	{7828565, 70},	// 8.1V
+	{7689904, 60},	// 8.0V
+	{7616386, 50},	// 7.9V
+	{7542868, 40},	// 7.8V
+	{7445179, 30},	// 7.7V
+	{7319231, 20},	// 7.6V
+	{7230219, 10},	// 7.5V
+	{7145132, 0},	// 7.4V
 };
 
 static battery_capacity dischargingTable_main[] = {
-	{(4050-DEVIATION_FACTOR)*3000, 100},
-	{(4035-DEVIATION_FACTOR)*3000,	99},
-	{(4020-DEVIATION_FACTOR)*3000,	98},
-	{(4010-DEVIATION_FACTOR)*3000,	97},
-	{(4000-DEVIATION_FACTOR)*3000,	96},
-	{(3990-DEVIATION_FACTOR)*3000,	96},
-	{(3980-DEVIATION_FACTOR)*3000,	95},
-	{(3970-DEVIATION_FACTOR)*3000,	92},
-	{(3960-DEVIATION_FACTOR)*3000,	91},
-	{(3950-DEVIATION_FACTOR)*3000,	90},
-	{(3940-DEVIATION_FACTOR)*3000,	88},
-	{(3930-DEVIATION_FACTOR)*3000,	86},
-	{(3920-DEVIATION_FACTOR)*3000,	84},
-	{(3910-DEVIATION_FACTOR)*3000,	82},
-	{(3900-DEVIATION_FACTOR)*3000,	80},
-	{(3890-DEVIATION_FACTOR)*3000,	74},
-	{(3860-DEVIATION_FACTOR)*3000,	69},
-	{(3830-DEVIATION_FACTOR)*3000,	64},
-	{(3780-DEVIATION_FACTOR)*3000,	59},
-	{(3760-DEVIATION_FACTOR)*3000,	54},
-	{(3740-DEVIATION_FACTOR)*3000,	49},
-	{(3720-DEVIATION_FACTOR)*3000,	44},
-	{(3700-DEVIATION_FACTOR)*3000,	39},
-	{(3680-DEVIATION_FACTOR)*3000,	34},
-	{(3660-DEVIATION_FACTOR)*3000,	29},
-	{(3640-DEVIATION_FACTOR)*3000,	24},
-	{(3620-DEVIATION_FACTOR)*3000,	19},
-	{(3600-DEVIATION_FACTOR)*3000,	14},
-	{(3580-DEVIATION_FACTOR)*3000,	13},
-	{(3560-DEVIATION_FACTOR)*3000,	12},
-	{(3540-DEVIATION_FACTOR)*3000,	11},
-	{(3520-DEVIATION_FACTOR)*3000,	10},
-	{(3500-DEVIATION_FACTOR)*3000,	9},
-	{(3480-DEVIATION_FACTOR)*3000,	8},
-	{(3460-DEVIATION_FACTOR)*3000,	7},
-	{(3440-DEVIATION_FACTOR)*3000,	6},
-	{(3430-DEVIATION_FACTOR)*3000,	5},
-	{(3420-DEVIATION_FACTOR)*3000,	4},
-	{(3020-DEVIATION_FACTOR)*3000,	0},
+	{12348069, 100},	// 12.6V
+	{12267281, 95},		// 12.5V
+	{12159084, 90},		// 12.4V
+	{12046866, 85},		// 12.3V
+	{11964911, 80},		// 12.2V
+	{11877830, 75},		// 12.1V
+	{11755750, 70},		// 12.0V
+	{11646338, 65},		// 11.9V
+	{11570238, 60},		// 11.8V
+	{11451020, 55},		// 11.7V
+	{11383137, 50},		// 11.6V
+	{11270445, 45},		// 11.5V
+	{11157753, 40},		// 11.4V
+	{11079020, 35},		// 11.3V
+	{10977674, 30},		// 11.2V
+	{10869598, 25},		// 11.1V
+	{10784457, 20},		// 11.0V
+	{10672664, 15},		// 10.9V
+	{10585168, 10},		// 10.8V
+	{10485386, 5},		// 10.7V
+	{10385604, 0},		// 10.6V
 };
 
 static u32 calibration_voltage(struct wm831x_power *power);
 static int wm831x_bat_check_status(struct wm831x *wm831x, int *status);
+
+static reset_saved_voltage(struct wm831x_power *power)
+{
+	int i;
+
+	for (i = 0; i < NR_VOLTAGE; i++) {
+		power->saved_voltage_main[i] = 0;
+		power->saved_voltage_backup[i] = 0;
+	}
+}
+
+static u32 calc_mean_voltage_main(struct wm831x_power *power)
+{
+	int i = 0, j = 0;
+	u32 sum = 0;
+	
+	for (i = 0; i < NR_VOLTAGE; i++) {
+		if (power->saved_voltage_main[i] != 0) {
+			sum += power->saved_voltage_main[i];
+			j++;
+		}
+	}
+
+	if (j > 0)
+		return sum / j;
+	else
+		return 0;
+}
+
+static u32 calc_mean_voltage_backup(struct wm831x_power *power)
+{
+	int i = 0, j = 0;
+	u32 sum = 0;
+	
+	for (i = 0; i < NR_VOLTAGE; i++) {
+		if (power->saved_voltage_backup[i] != 0) {
+			sum += power->saved_voltage_backup[i];
+			j++;
+		}
+	}
+
+	if (j > 0)
+		return sum / j;
+	else
+		return 0;
+}
+
+static int insert_saved_voltages_main(struct wm831x_power *power, u32 voltage_uV)
+{
+	static int i = 0;
+
+	power->saved_voltage_main[i % NR_VOLTAGE] = voltage_uV;
+	i++;
+}
+
+static int insert_saved_voltages_backup(struct wm831x_power *power, u32 voltage_uV)
+{
+	static int i = 0;
+
+	power->saved_voltage_backup[i % NR_VOLTAGE] = voltage_uV;
+	i++;
+}
 
 static u32 calibrate_backup_battery_capability_percent(struct wm831x_power *power)
 {
@@ -198,6 +217,7 @@ static u32 calibrate_backup_battery_capability_percent(struct wm831x_power *powe
 
 	wm831x_bat_check_status(power->wm831x, &power->battery_status);
 
+#if 0
 	if (power->battery_status == POWER_SUPPLY_STATUS_DISCHARGING) {
 		pTable = dischargingTable_backup;
 		tableSize = sizeof(dischargingTable_backup)/
@@ -207,6 +227,11 @@ static u32 calibrate_backup_battery_capability_percent(struct wm831x_power *powe
 		tableSize = sizeof(chargingTable_backup)/
 			sizeof(chargingTable_backup[0]);
 	}
+#else
+		pTable = dischargingTable_backup;
+		tableSize = sizeof(dischargingTable_backup)/
+			sizeof(dischargingTable_backup[0]);
+#endif
 	for (i = 0; i < tableSize; i++) {
 		if (power->voltage_uV >= pTable[i].voltage)
 			return	pTable[i].percent;
@@ -249,6 +274,8 @@ static int main_battery_voltage(struct wm831x_power *power,
 	usleep_range(1000, 2000);
 	voltage = calibration_voltage(power);
 	//pr_info("++voltage_uV %d\n", voltage);
+	insert_saved_voltages_main(power, voltage);
+	voltage = calc_mean_voltage_main(power);
 	gpio_set_value(wm831x_pdata->batt_adc_sel_gpio, 1);
 	usleep_range(1000, 2000);
 	mutex_unlock(&power->update_lock);
@@ -690,7 +717,7 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 #ifdef JUST_FOR_DEBUG
 		val->intval = 78;
 #endif
-		val->intval = (val->intval > 10) ? val->intval : 11;
+		//val->intval = (val->intval > 10) ? val->intval : 11;
 		//pr_info("capacity %d\n", val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
@@ -778,7 +805,7 @@ static irqreturn_t wm831x_pwr_src_irq(int irq, void *data)
 
 static u32 calibration_voltage(struct wm831x_power *power)
 {
-	volatile u32 voltage_data = 1;
+	volatile u32 voltage_data = 0;
 	u32 voltage_each;
 	int i = 0, j = 0;
 	int ret;
@@ -788,14 +815,14 @@ static u32 calibration_voltage(struct wm831x_power *power)
 		ret = wm831x_power_read_voltage(power->wm831x, WM831X_AUX_BATT, &voltage_each);
 		if (ret < 0) {
 			pr_err("%s: read voltage failure\n", __func__);
-			j++;
 			continue;
 		}
 		voltage_data += voltage_each;
+		j++;
 	}
 
-	if (j < ADC_SAMPLE_COUNT)
-		voltage_data = voltage_data / (ADC_SAMPLE_COUNT - j);
+	if (j > 0 && j < ADC_SAMPLE_COUNT)
+		voltage_data = voltage_data / j;
 	else
 		voltage_data = 0;
 
@@ -810,15 +837,18 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 	mutex_lock(&power->update_lock);
 	power->voltage_uV = calibration_voltage(power);
 #ifdef	DEBUG_BATT
-	pr_info("voltage_uV %d\n", power->voltage_uV);
+	pr_info("from register: voltage_uV %d\n", power->voltage_uV);
 #endif
+	insert_saved_voltages_backup(power, power->voltage_uV);
+	power->voltage_uV = calc_mean_voltage_backup(power);
+	pr_info("after mean   : voltage_uV %d\n", power->voltage_uV);
 	power->percent = calibrate_backup_battery_capability_percent(power);
 	mutex_unlock(&power->update_lock);
 
 #ifdef JUST_FOR_DEBUG
 	power->percent = 78;
 #endif
-	power->percent = (power->percent) > 10 ? power->percent : 11;
+	//power->percent = (power->percent) > 10 ? power->percent : 11;
 #ifdef	DEBUG_BATT
 	pr_info("percent %d\n", power->percent);
 #endif
@@ -830,6 +860,7 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 		power_supply_changed(&power->wall);
 	}
 
+#if 0
 	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING ||
 	    power->battery_status == POWER_SUPPLY_STATUS_FULL) {
 #ifdef	DEBUG_BATT
@@ -879,6 +910,24 @@ static void wm831x_battery_update_status(struct wm831x_power *power)
 
 			power->percent_minus_update_threshold = 0;
 		}
+	}
+#endif
+	if (power->battery_status == POWER_SUPPLY_STATUS_CHARGING) {
+		if (power->percent > power->old_percent) {
+			power->old_percent = power->percent;
+			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
+		}
+	} else if (power->battery_status == POWER_SUPPLY_STATUS_DISCHARGING) {
+		if (power->percent < power->old_percent) {
+			power->old_percent = power->percent;
+			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
+		}
+	} else if (power->battery_status == POWER_SUPPLY_STATUS_FULL) {
+			power->old_percent = power->percent = 100;
+			power_supply_changed(&power->battery);
+			power_supply_changed(&power->wall);
 	}
 }
 
@@ -1076,8 +1125,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 	power->old_percent = 100;
 	power->percent_minus_update_threshold = 0;
 	power->percent_plus_update_threshold = 0;
-	for (i = 0; i < NR_VOLTAGE; i++)
-		power->saved_voltage[i] = 0;
+	reset_saved_voltage(power);
 
 	if (power->have_battery) {
 		    battery->name = power->battery_name;
@@ -1264,6 +1312,12 @@ static int wm831x_resume(struct platform_device *pdev)
 			disable_irq_wake(irq);
 		}
 
+		/* 
+		 * need reset the data, image suspend long time, the old
+		 * battery info is useless.
+		 */
+		reset_saved_voltage(power);
+
 		acok_in = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
 		if (acok_in != power->acok_in) {
 
@@ -1272,6 +1326,7 @@ static int wm831x_resume(struct platform_device *pdev)
 					"Connected" : "Disconnected");
 
 			wm831x_bat_check_status(power->wm831x, &power->battery_status);
+//			wm831x_battery_update_status(power);
 			power_supply_changed(&power->battery);
 			power_supply_changed(&power->wall);
 		}
