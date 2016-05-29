@@ -145,7 +145,6 @@ static unsigned int share_count_prg1;
 #define CCM_CCSR		0x0c
 #define CCM_CBCMR		0x18
 #define CCM_CS2CDR		0x2c
-#define CCM_CCOSR		0x60
 
 #define CCDR_MMDC_CH1_MASK	BIT(16)
 #define CCSR_PLL3_SW_CLK_SEL	BIT(0)
@@ -482,10 +481,6 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	WARN_ON(!base);
 
 	imx6q_pm_set_ccm_base(base);
-		unsigned int reg;
-		reg = readl_relaxed(ccm_base + CCM_CCOSR);
-		reg |= 0xe00000;
-		writel_relaxed(reg, ccm_base + CCM_CCOSR);
 
 	/*                                              name                reg       shift width parent_names     num_parents */
 	clk[IMX6QDL_CLK_STEP]             = imx_clk_mux("step",	            base + 0xc,  8,  1, step_sels,	   ARRAY_SIZE(step_sels));
@@ -866,12 +861,11 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	 * Let's initially set up CLKO with OSC24M, since this configuration
 	 * is widely used by imx6q board designs to clock audio codec.
 	 */
-	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO2_SEL], clk[IMX6QDL_CLK_USDHC4]);
-	imx_clk_set_rate(clk[IMX6QDL_CLK_CKO2_SEL], 24750000);
+	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO2_SEL], clk[IMX6QDL_CLK_OSC]);
 
 	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO1_SEL], clk[IMX6QDL_CLK_PLL4_AUDIO_DIV]);
 	imx_clk_set_parent(clk[IMX6QDL_CLK_CKO], clk[IMX6QDL_CLK_CKO2]);
-//	imx_clk_set_rate(clk[IMX6QDL_CLK_CKO1], 1200000);
+	imx_clk_set_rate(clk[IMX6QDL_CLK_CKO2], 12000000);
 
 	/* Audio-related clocks configuration */
 	imx_clk_set_parent(clk[IMX6QDL_CLK_SPDIF_SEL], clk[IMX6QDL_CLK_PLL3_PFD3_454M]);
