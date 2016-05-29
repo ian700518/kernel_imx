@@ -347,8 +347,7 @@ static int wm831x_wall_get_prop(struct power_supply *psy,
 		val->intval = !gpio_get_value(wm831x_pdata->backup_acok_gpio);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-//		ret = wm831x_power_read_voltage(wm831x, WM831X_AUX_WALL, val);
-		val->intval = wm831x_power->voltage_uV;
+		ret = wm831x_power_read_voltage(wm831x, WM831X_AUX_WALL, val);
 		break;
 	default:
 		ret = -EINVAL;
@@ -581,9 +580,12 @@ static int wm831x_bat_check_status(struct wm831x *wm831x, int *status)
 
 	if (backup_battery_is_charging(wm831x_pdata))
 		*status = POWER_SUPPLY_STATUS_CHARGING;
-	else if (backup_battery_is_charging_full(wm831x_pdata))
+	else if (backup_battery_is_charging_full(wm831x_pdata)) {
 		*status = POWER_SUPPLY_STATUS_FULL;
-	else
+#ifdef	DEBUG_BATT
+		pr_info("BATT is FULL!!!!!\n");
+#endif
+	} else
 		*status = POWER_SUPPLY_STATUS_DISCHARGING;
 
 	return 0;
@@ -702,7 +704,8 @@ static int wm831x_bat_get_prop(struct power_supply *psy,
 		val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-		ret = wm831x_power_read_voltage(wm831x, WM831X_AUX_BATT, val);
+		//ret = wm831x_power_read_voltage(wm831x, WM831X_AUX_BATT, val);
+		val->intval = wm831x_power->voltage_uV;
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		ret = wm831x_bat_check_health(wm831x, &val->intval);
@@ -805,7 +808,7 @@ static irqreturn_t wm831x_pwr_src_irq(int irq, void *data)
 
 static u32 calibration_voltage(struct wm831x_power *power)
 {
-	volatile u32 voltage_data = 0;
+	u32 voltage_data = 0;
 	u32 voltage_each;
 	int i = 0, j = 0;
 	int ret;
@@ -821,7 +824,7 @@ static u32 calibration_voltage(struct wm831x_power *power)
 		j++;
 	}
 
-	if (j > 0 && j < ADC_SAMPLE_COUNT)
+	if (j > 0 && j <= ADC_SAMPLE_COUNT)
 		voltage_data = voltage_data / j;
 	else
 		voltage_data = 0;
@@ -1122,7 +1125,7 @@ static int wm831x_power_probe(struct platform_device *pdev)
 
 	/*printk("%s %d ===\n", __func__, power->have_battery);*/
 	power->have_battery = 1;	/* force to have battery, Robby */
-	power->old_percent = 100;
+//	power->old_percent = 100;
 	power->percent_minus_update_threshold = 0;
 	power->percent_plus_update_threshold = 0;
 	reset_saved_voltage(power);
