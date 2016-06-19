@@ -53,5 +53,5 @@
 };
 
 &sata {
-	status = "okay";
+	status = "disabled";
 };
