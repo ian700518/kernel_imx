@@ -41,7 +41,7 @@
 };
 
 &mxcfb2 {
-	status = "disabled";
+	status = "okay";
 };
 
 &mxcfb3 {
@@ -49,7 +49,7 @@
 };
 
 &mxcfb4 {
-	status = "okay";
+	status = "disabled";
 };
 
 &sata {

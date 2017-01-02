@@ -16,6 +16,8 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mxcfb.h>
+#include <linux/delay.h>
+#include <linux/of_gpio.h>
 #include <linux/of_device.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
@@ -36,6 +38,12 @@ struct mxc_lcdif_data {
 #define DISPDRV_LCD	"lcd"
 
 static struct fb_videomode lcdif_modedb[] = {
+	{
+	/* 800x600 @ 60 Hz , pixel clk @ 40MHz */
+	"Himax-SVGA", 60, 800, 600, 25000, 88, 112, 39, 21, 20, 10,
+	FB_SYNC_CLK_LAT_FALL,
+	FB_VMODE_NONINTERLACED,
+	0,},
 	{
 	/* 800x480 @ 57 Hz , pixel clk @ 27MHz */
 	"CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
@@ -61,6 +69,15 @@ static int lcdif_init(struct mxc_dispdrv_handle *disp,
 	struct fb_videomode *modedb = lcdif_modedb;
 	int modedb_sz = lcdif_modedb_sz;
 
+	static int j = 0;
+
+	if (j % 2)
+		plat_data->disp_id = 0;
+	else
+		plat_data->disp_id = 1;
+	j++;
+
+	printk("ipu_id %d, disp_id %d\n", plat_data->ipu_id, plat_data->disp_id);
 	/* use platform defined ipu/di */
 	ret = ipu_di_to_crtc(dev, plat_data->ipu_id,
 			     plat_data->disp_id, &setting->crtc);
@@ -106,6 +123,7 @@ static int lcd_get_of_property(struct platform_device *pdev,
 	int err;
 	u32 ipu_id, disp_id;
 	const char *default_ifmt;
+	int pwren_gpio, rst_gpio;
 
 	err = of_property_read_string(np, "default_ifmt", &default_ifmt);
 	if (err) {
@@ -151,6 +169,30 @@ static int lcd_get_of_property(struct platform_device *pdev,
 		dev_err(&pdev->dev, "err default_ifmt!\n");
 		return -ENOENT;
 	}
+
+	pwren_gpio = of_get_named_gpio(np, "pwren-gpios", 0);
+	if (gpio_is_valid(pwren_gpio)) {
+		err = gpio_request_one(pwren_gpio, GPIOF_OUT_INIT_HIGH,
+				"ledpwr-gpios");
+		if (err) {
+			err = 0;	/* two LCDs shares the GPIO */
+			pr_warn("failed to request LCD power enable gpio\n");
+		}
+	}
+
+	rst_gpio = of_get_named_gpio(np, "rst-gpios", 0);
+	if (gpio_is_valid(rst_gpio)) {
+		err = gpio_request_one(rst_gpio, GPIOF_OUT_INIT_HIGH,
+				"ledpwr-gpios");
+		if (err)
+			pr_warn("failed to request LCD RST gpio\n");
+	}
+
+	mdelay(10);
+	gpio_set_value(rst_gpio, 0);
+	mdelay(10);
+	gpio_set_value(rst_gpio, 1);
+	mdelay(500);
 
 	return err;
 }
