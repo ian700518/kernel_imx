@@ -325,7 +325,7 @@
 		ipu_id = <0>;
 		csi_id = <0>;
 		mclk_source = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	v4l2_cap_1 {
@@ -333,7 +333,7 @@
 		ipu_id = <0>;
 		csi_id = <1>;
 		mclk_source = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	v4l2_out {
@@ -371,27 +371,6 @@
 
 	caam_keyblob {
 		compatible = "fsl,sec-v4.0-keyblob";
-	};
-
-	v4l2_cap_0 {
-		compatible = "fsl,imx6q-v4l2-capture";
-		ipu_id = <0>;
-		csi_id = <0>;
-		mclk_source = <0>;
-		status = "okay";
-	};
-
-	v4l2_cap_1 {
-		compatible = "fsl,imx6q-v4l2-capture";
-		ipu_id = <0>;
-		csi_id = <1>;
-		mclk_source = <0>;
-		status = "okay";
-	};
-
-	v4l2_out {
-		compatible = "fsl,mxc_v4l2_output";
-		status = "okay";
 	};
 
 	mipi_dsi_reset: mipi-dsi-reset {
@@ -916,7 +895,7 @@
 &dcic2 {
 	dcic_id = <1>;
 	dcic_mux = "dcic-lvds1";
-	status = "okay";
+	status = "disabled";
 };
 
 &gpc {
@@ -957,7 +936,7 @@
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		primary;
-		status = "okay";
+		status = "disabled";
 
 		display-timings {
 			native-mode = <&timing0>;
@@ -978,7 +957,7 @@
 	lvds-channel@1 {
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		status = "okay";
+		status = "disabled";
 
 		display-timings {
 			native-mode = <&timing1>;
@@ -998,7 +977,7 @@
 };
 
 &mipi_csi {
-	status = "okay";
+	status = "disabled";
 	ipu_id = <0>;
 	csi_id = <1>;
 	v_channel = <0>;
