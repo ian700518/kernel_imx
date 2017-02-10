@@ -173,7 +173,6 @@
 		compatible = "fsl,imx6ul-evk-wm8960",
 			   "fsl,imx-audio-wm8960";
 		model = "wm8960-audio";
-		pinctrl-assert-gpios = <&gpio5 16 GPIO_ACTIVE_HIGH>;
 		cpu-dai = <&ssi2>;
 		audio-codec = <&codec>;
 		asrc-controller = <&asrc>;
@@ -184,8 +183,9 @@
 		 * hp-det-polarity = 0: hp detect high for headphone
 		 * hp-det-polarity = 1: hp detect high for speaker
 		 */
-		hp-det = <3 0>;
+		hp-det = <3 1>;
 		hp-det-gpios = <&gpio4 10 0>;
+		mic-det-gpios = <&gpio4 10 0>;
 		audio-routing =
 			"Headset Jack", "HP_L",
 			"Headset Jack", "HP_R",
