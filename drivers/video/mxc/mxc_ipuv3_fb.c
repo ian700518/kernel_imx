@@ -3466,8 +3466,10 @@ static int mxcfb_probe(struct platform_device *pdev)
 
 	plat_data = devm_kzalloc(&pdev->dev, sizeof(struct
 					ipuv3_fb_platform_data), GFP_KERNEL);
+				
 	if (!plat_data)
 		return -ENOMEM;
+	
 	pdev->dev.platform_data = plat_data;
 
 	ret = mxcfb_get_of_property(pdev, plat_data);

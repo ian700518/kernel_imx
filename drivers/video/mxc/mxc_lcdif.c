@@ -72,9 +72,9 @@ static int lcdif_init(struct mxc_dispdrv_handle *disp,
 	static int j = 0;
 
 	if (j % 2)
-		plat_data->disp_id = 0;
+		plat_data->disp_id = 0;		/* second register lcd for 3d image */
 	else
-		plat_data->disp_id = 1;
+		plat_data->disp_id = 1;		/* first register lcd for touchscreen */
 	j++;
 
 	printk("ipu_id %d, disp_id %d\n", plat_data->ipu_id, plat_data->disp_id);
@@ -173,7 +173,7 @@ static int lcd_get_of_property(struct platform_device *pdev,
 	pwren_gpio = of_get_named_gpio(np, "pwren-gpios", 0);
 	if (gpio_is_valid(pwren_gpio)) {
 		err = gpio_request_one(pwren_gpio, GPIOF_OUT_INIT_HIGH,
-				"ledpwr-gpios");
+				"pwren-gpios");
 		if (err) {
 			err = 0;	/* two LCDs shares the GPIO */
 			pr_warn("failed to request LCD power enable gpio\n");
@@ -183,11 +183,11 @@ static int lcd_get_of_property(struct platform_device *pdev,
 	rst_gpio = of_get_named_gpio(np, "rst-gpios", 0);
 	if (gpio_is_valid(rst_gpio)) {
 		err = gpio_request_one(rst_gpio, GPIOF_OUT_INIT_HIGH,
-				"ledpwr-gpios");
+				"rst-gpios");
 		if (err)
 			pr_warn("failed to request LCD RST gpio\n");
 	}
-
+	
 	mdelay(10);
 	gpio_set_value(rst_gpio, 0);
 	mdelay(10);
@@ -214,8 +214,10 @@ static int mxc_lcdif_probe(struct platform_device *pdev)
 				GFP_KERNEL);
 	if (!plat_data)
 		return -ENOMEM;
+
 	pdev->dev.platform_data = plat_data;
 
+	
 	ret = lcd_get_of_property(pdev, plat_data);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "get lcd of property fail\n");
@@ -252,6 +254,7 @@ static const struct of_device_id imx_lcd_dt_ids[] = {
 	{ .compatible = "fsl,lcd"},
 	{ /* sentinel */ }
 };
+
 static struct platform_driver mxc_lcdif_driver = {
 	.driver = {
 		.name = "mxc_lcdif",
@@ -260,6 +263,7 @@ static struct platform_driver mxc_lcdif_driver = {
 	.probe = mxc_lcdif_probe,
 	.remove = mxc_lcdif_remove,
 };
+
 
 static int __init mxc_lcdif_init(void)
 {

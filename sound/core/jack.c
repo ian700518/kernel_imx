@@ -142,9 +142,11 @@ int snd_jack_new(struct snd_card *card, const char *id, int type,
 	jack->type = type;
 
 	for (i = 0; i < SND_JACK_SWITCH_TYPES; i++)
-		if (type & (1 << i))
+		if (type & (1 << i)) {
+			printk("jack.c i = %d\n", i);
 			input_set_capability(jack->input_dev, EV_SW,
 					     jack_switch_types[i]);
+		}
 
 	err = snd_device_new(card, SNDRV_DEV_JACK, jack, &ops);
 	if (err < 0)

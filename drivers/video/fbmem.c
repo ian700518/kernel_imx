@@ -424,8 +424,18 @@ static void fb_do_show_logo(struct fb_info *info, struct fb_image *image,
 			    int rotate, unsigned int num)
 {
 	unsigned int x;
+	unsigned int xoff,yoff;
+	
+	// Add By Ian at 2017-02-22 
+	// 添加的代码 ,设置logo居中显示
+	xoff = (info->var.xres - num * (fb_logo.logo->width ))>>1; 
+	yoff = (info->var.yres -  (fb_logo.logo->height ))>>1;
 
 	if (rotate == FB_ROTATE_UR) {
+		// Add By Ian at 2017-02-22 
+		//添加的代码,设置logo居中显示 
+		image->dx = xoff ;
+		image->dy = yoff ;
 		for (x = 0;
 		     x < num && image->dx + image->width <= info->var.xres;
 		     x++) {
@@ -498,8 +508,11 @@ static int fb_show_logo_line(struct fb_info *info, int rotate,
 		fb_set_logo(info, logo, logo_new, fb_logo.depth);
 	}
 
-	image.dx = 0;
-	image.dy = y;
+	// image.dx = 0;
+	// image.dy = y;
+	/* 置中使用 */
+	image.dx = (info->var.xres / 2) - (image.width / 2);
+	image.dy = (info->var.yres / 2) - (image.height / 2);
 	image.width = logo->width;
 	image.height = logo->height;
 
@@ -658,14 +671,20 @@ int fb_prepare_logo(struct fb_info *info, int rotate)
  	}
 
 	return fb_prepare_extra_logos(info, fb_logo.logo->height, yres);
+	// Add By Ian at 2017-02-22 
+	//添加的代码,设置logo居中显示 
+	// return fb_prepare_extra_logos(info, fb_logo.logo->height, yres)+((info->var.yres )>>1);
 }
 
 int fb_show_logo(struct fb_info *info, int rotate)
 {
 	int y;
 
-	y = fb_show_logo_line(info, rotate, fb_logo.logo, 0,
-			      num_online_cpus());
+	/* y = fb_show_logo_line(info, rotate, fb_logo.logo, 0,
+			      num_online_cpus()); */
+	// Add by Ian at 2017-02-22 
+	// For one logo
+	y = fb_show_logo_line(info, rotate, fb_logo.logo, 0, 1);
 	y = fb_show_extra_logos(info, y, rotate);
 
 	return y;

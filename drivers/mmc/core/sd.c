@@ -856,6 +856,8 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
 		/* Erase init depends on CSD and SSR */
 		mmc_init_erase(card);
 
+		mdelay(10);
+
 		/*
 		 * Fetch switch information from card.
 		 */

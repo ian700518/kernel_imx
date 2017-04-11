@@ -46,6 +46,8 @@
 #include "common.h"
 #include "cpuidle.h"
 #include "hardware.h"
+#include "../arch/arm/mach-imx/hardware.h"
+
 
 static struct fec_platform_data fec_pdata;
 static struct flexcan_platform_data flexcan_pdata[2];

@@ -23,21 +23,21 @@
 	};
 
 	regulators {
-		wlreg_on: fixedregulator@100 {
-			compatible = "regulator-fixed";
-			regulator-min-microvolt = <5000000>;
-			regulator-max-microvolt = <5000000>;
-			regulator-name = "wlreg_on";
-			gpio = <&gpio4 7 0>;
-			startup-delay-us = <100>;
-			enable-active-high;
-		};
+/*		wlreg_on: fixedregulator@100 {				*/
+/*			compatible = "regulator-fixed";			*/
+/*			regulator-min-microvolt = <5000000>;	*/
+/*			regulator-max-microvolt = <5000000>;	*/
+/*			regulator-name = "wlreg_on";			*/
+/*			gpio = <&gpio4 7 0>;					*/
+/*			startup-delay-us = <100>;				*/
+/*			enable-active-high;						*/
+/*		};											*/
 	};
 
-	bcmdhd_wlan_0: bcmdhd_wlan@0 {
-		compatible = "android,bcmdhd_wlan";
-		wlreg_on-supply = <&wlreg_on>;
-	};
+/*	bcmdhd_wlan_0: bcmdhd_wlan@0 {				*/
+/*		compatible = "android,bcmdhd_wlan";		*/
+/*		wlreg_on-supply = <&wlreg_on>;			*/
+/*	};											*/
 };
 
 &ecspi1 {
@@ -65,7 +65,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart5_1>;
 	fsl,uart-has-rtscts;
-	status = "okay";
+	status = "disabled";
 	/* for DTE mode, add below change */
 	/* fsl,dte-mode; */
 	/* pinctrl-0 = <&pinctrl_uart5dte_1>; */

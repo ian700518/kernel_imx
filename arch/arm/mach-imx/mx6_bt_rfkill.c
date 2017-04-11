@@ -42,6 +42,7 @@ static int system_in_suspend;
 
 struct mxc_bt_rfkill_data {
 	int bt_power_gpio;
+	int bt_dev_wake_gpio;	// add by ian
 };
 
 struct mxc_bt_rfkill_pdata {
@@ -49,6 +50,8 @@ struct mxc_bt_rfkill_pdata {
 
 static void mxc_bt_rfkill_reset(void *rfkdata)
 {
+	int gpio;
+
 	struct mxc_bt_rfkill_data *data = rfkdata;
 	printk(KERN_INFO "mxc_bt_rfkill_reset\n");
 	if (gpio_is_valid(data->bt_power_gpio)) {
@@ -57,7 +60,22 @@ static void mxc_bt_rfkill_reset(void *rfkdata)
 		mdelay(500);
 		gpio_set_value(data->bt_power_gpio, 1);
 		mdelay(500);
+		/* add by ian */
+		gpio = gpio_get_value(data->bt_power_gpio);
+		printk("bt_power_gpio state is:%d\n", gpio);
+		/* add by ian */
 	}
+	/* add by ian */
+	if (gpio_is_valid(data->bt_dev_wake_gpio)) {
+		mdelay(500);
+		gpio_set_value(data->bt_dev_wake_gpio, 0);
+		mdelay(500);
+		gpio_set_value(data->bt_dev_wake_gpio, 1);
+		mdelay(500);
+		gpio = gpio_get_value(data->bt_dev_wake_gpio);
+		printk("bt_dev_wake_gpio state is:%d\n", gpio);
+	}
+	/* add by ian */
 }
 
 static int mxc_bt_rfkill_power_change(void *rfkdata, int status)
@@ -75,6 +93,7 @@ static int mxc_bt_set_block(void *rfkdata, bool blocked)
 	 * don't let rfkill to actually reset the chip. */
 	if (system_in_suspend)
 		return 0;
+	pr_info("rfkill: blocked : %d\n", blocked);
 	pr_info("rfkill: BT RF going to : %s\n", blocked ? "off" : "on");
 	if (!blocked)
 		ret = mxc_bt_rfkill_power_change(rfkdata, 1);
@@ -166,6 +185,21 @@ static int mxc_bt_rfkill_probe(struct platform_device *pdev)
 			goto error_request_gpio;
 		}
 	}
+
+	/* add by ian */
+	data->bt_dev_wake_gpio = of_get_named_gpio(np, "bt-dev-wake-gpios", 0);
+	if (gpio_is_valid(data->bt_dev_wake_gpio)) {
+		printk(KERN_INFO "bt dev wake gpio is:%d\n", data->bt_dev_wake_gpio);
+		rc = devm_gpio_request_one(&pdev->dev,
+								data->bt_dev_wake_gpio,
+								GPIOF_OUT_INIT_HIGH,
+								"BT dev wake enable");
+		if (rc) {
+			dev_err(&pdev->dev, "unable to get bt-dev-wake-gpios\n");
+			goto error_request_gpio;	
+		}
+	}
+	/* add by ian */
 
 	rc = register_pm_notifier(&mxc_bt_power_notifier);
 	if (rc)

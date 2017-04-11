@@ -584,7 +584,17 @@ static void fbcon_prepare_logo(struct vc_data *vc, struct fb_info *info,
 	if (fb_get_color_depth(&info->var, &info->fix) == 1)
 		erase &= ~0x400;
 	logo_height = fb_prepare_logo(info, ops->rotate);
+	printk("info logo height: %d\n", logo_height);
+	printk("info->mode-xres at fbcon_prepare_log: %d\n", info->mode->xres);
+	printk("info->var.xres at fbcon_prepare_logo; %d\n", info->var.xres);
+	printk("info->mode->yres at fbcon_prepare_logo; %d\n", info->mode->yres);
+	printk("info->var.yres at fbcon_prepare_logo; %d\n", info->var.yres);
+	logo_height += (info->var.yres / 2) - (logo_height / 2);
+	printk("logo_height 2 = %d\n", logo_height);
+	printk("vc->vc_font.height = %d\n", vc->vc_font.height);
+	printk("vc->vc_bottom = %d\n", vc->vc_bottom);
 	logo_lines = DIV_ROUND_UP(logo_height, vc->vc_font.height);
+	printk("logo_lines = %d\n", logo_lines);
 	q = (unsigned short *) (vc->vc_origin +
 				vc->vc_size_row * rows);
 	step = logo_lines * cols;

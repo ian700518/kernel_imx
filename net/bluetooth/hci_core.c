@@ -1855,6 +1855,7 @@ static int hci_dev_do_open(struct hci_dev *hdev)
 
 	BT_DBG("%s %p", hdev->name, hdev);
 
+	printk("at hci_core.c Hci_dev_do_open \n");
 	hci_req_lock(hdev);
 
 	if (test_bit(HCI_UNREGISTER, &hdev->dev_flags)) {

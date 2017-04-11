@@ -85,6 +85,8 @@ static int hp_set_status_check(void)
 		return 0;
 
 	hp_status = gpio_get_value(priv->hp_set_gpio) ? 1 : 0;
+
+
 	buf = kmalloc(32, GFP_ATOMIC);
 	if (!buf) {
 		dev_err(&pdev->dev, "%s kmalloc failed\n", __func__);
@@ -101,10 +103,11 @@ static int hp_set_status_check(void)
 		 *  As the hp MIC only connect the input for left channel, we
 		 *  need to route it for right channel.
 		 */
-		snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 1<<2);
+		//snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 1<<2);
+		snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 2<<2);
 
 		snd_kctl_jack_report(priv->snd_card, priv->headset_kctl, 1);
-	} else {
+	} else {	
 		snprintf(buf, 32, "STATE=%d", 0);
 		snd_soc_dapm_enable_pin(&priv->codec->dapm, "Ext Spk");
 		snd_soc_dapm_enable_pin(&priv->codec->dapm, "Main MIC");
@@ -114,7 +117,8 @@ static int hp_set_status_check(void)
 		 *  As the Main MIC only connect the input for right channel,
 		 *  we need to route it for left channel.
 		 */
-		snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 2<<2);
+		//snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 2<<2);
+		snd_soc_update_bits(priv->codec, WM8960_ADDCTL1, 3<<2, 0);
 
 		snd_kctl_jack_report(priv->snd_card, priv->headset_kctl, 0);
 	}
@@ -146,6 +150,7 @@ static int imx_wm8960_gpio_init(struct snd_soc_card *card)
 	if (gpio_is_valid(priv->hp_set_gpio)) {
 		imx_hp_set_gpio.gpio = priv->hp_set_gpio;
 		imx_hp_set_gpio.jack_status_check = hp_set_status_check;
+
 
 		ret = snd_soc_jack_new(codec, "Headset Jack",
 				SND_JACK_HEADSET, &imx_hp_set);
@@ -218,25 +223,25 @@ static void wm8960_init(struct snd_soc_dai *codec_dai)
 	 * codec ADCLRC pin configured as GPIO, DACLRC pin is used as a frame
 	 * clock for ADCs and DACs
 	 */
-	snd_soc_update_bits(codec, WM8960_IFACE2, 1<<6, 1<<6);
+	snd_soc_update_bits(codec, WM8960_IFACE2, 1<<6, 1<<6);			// Set regitster 0x09 "Audio Interface", set ADCLRC to be GPIO
 
 	/*
 	 * GPIO1 used as headphone detect output
 	 */
-	snd_soc_update_bits(codec, WM8960_ADDCTL4, 7<<4, 3<<4);
+	snd_soc_update_bits(codec, WM8960_ADDCTL4, 7<<4, 3<<4);	 
 
 	/*
 	 * Enable headphone jack detect
 	 */
-	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<6, 1<<6);
-	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<5, data->hp_det[1]<<5);
-	snd_soc_update_bits(codec, WM8960_ADDCTL4, 3<<2, data->hp_det[0]<<2);
+	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<6, 0);					// enable headphone
+	snd_soc_update_bits(codec, WM8960_ADDCTL2, 1<<5, data->hp_det[1]<<5);	// set detect high is headphone value is 0
+	snd_soc_update_bits(codec, WM8960_ADDCTL4, 3<<2, data->hp_det[0]<<2);	// set JD3 used for jack detect input value is 3
 	snd_soc_update_bits(codec, WM8960_ADDCTL1, 3, 3);
 
 	/*
 	 * route left channel to right channel in default.
 	 */
-	snd_soc_update_bits(codec, WM8960_ADDCTL1, 3<<2, 1<<2);
+	//snd_soc_update_bits(codec, WM8960_ADDCTL1, 3<<2, 2<<2);
 }
 
 /* -1 for reserved value */
@@ -610,6 +615,7 @@ audmux_bypass:
 		data->is_codec_master = true;
 
 	data->codec_clk = devm_clk_get(&codec_dev->dev, "mclk");
+	
 	if (IS_ERR(data->codec_clk)) {
 		ret = PTR_ERR(data->codec_clk);
 		dev_err(&pdev->dev, "failed to get codec clk: %d\n", ret);
@@ -715,6 +721,7 @@ audmux_bypass:
 		goto fail;
 
 	ret = imx_wm8960_gpio_init(&data->card);
+	printk("imx_wm8960_gpio_init return value is : %d\n", ret);
 
 	if (gpio_is_valid(priv->hp_set_gpio)) {
 		ret = driver_create_file(pdev->dev.driver, &driver_attr_headphone);

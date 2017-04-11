@@ -1042,6 +1042,16 @@ static void msm_hs_set_mctrl_locked(struct uart_port *uport,
 	clk_disable(msm_uport->clk);
 }
 
+void msm_hs_set_mctrl(struct uart_port *uport,
+				    unsigned int mctrl)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&uport->lock, flags);
+	msm_hs_set_mctrl_locked(uport, mctrl);
+	spin_unlock_irqrestore(&uport->lock, flags);
+}
+EXPORT_SYMBOL(msm_hs_set_mctrl);
+
 /* Standard API, Enable modem status (CTS) interrupt  */
 static void msm_hs_enable_ms_locked(struct uart_port *uport)
 {

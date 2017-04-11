@@ -587,6 +587,7 @@ static int __init hci_uart_init(void)
 		BT_ERR("HCI line discipline registration failed. (%d)", err);
 		return err;
 	}
+	printk("N_HCI is %d\n", N_HCI);
 
 #ifdef CONFIG_BT_HCIUART_H4
 	h4_init();
