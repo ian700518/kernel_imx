@@ -98,6 +98,8 @@
 #define MAX1363_SE_DE_MASK			0x01
 
 #define MAX1363_MAX_CHANNELS 25
+
+
 /**
  * struct max1363_mode - scan mode information
  * @conf:	The corresponding value of the configuration register
@@ -417,6 +419,7 @@ error_ret:
 
 }
 
+
 static int max1363_read_raw(struct iio_dev *indio_dev,
 			    struct iio_chan_spec const *chan,
 			    int *val,
@@ -426,7 +429,6 @@ static int max1363_read_raw(struct iio_dev *indio_dev,
 	struct max1363_state *st = iio_priv(indio_dev);
 	int ret;
 
-	printk("at max1363.c into max1363_read_raw~~~~~~\n");	// add by ian test at 20170406
 	switch (m) {
 	case IIO_CHAN_INFO_RAW:
 		ret = max1363_read_single_chan(indio_dev, chan, val, m);
@@ -680,6 +682,7 @@ enum { max1361,
        max11647
 };
 
+
 static const int max1363_monitor_speeds[] = { 133000, 665000, 33300, 16600,
 					      8300, 4200, 2000, 1000 };
 
@@ -732,7 +735,6 @@ static int max1363_read_thresh(struct iio_dev *indio_dev,
 	enum iio_event_direction dir, enum iio_event_info info, int *val,
 	int *val2)
 {
-	printk("at max1363.c into max1363_read_thresh~~~~~~\n");	// add by ian test at 20170406
 	struct max1363_state *st = iio_priv(indio_dev);
 	if (dir == IIO_EV_DIR_FALLING)
 		*val = st->thresh_low[chan->channel];
@@ -746,7 +748,6 @@ static int max1363_write_thresh(struct iio_dev *indio_dev,
 	enum iio_event_direction dir, enum iio_event_info info, int val,
 	int val2)
 {
-	printk("at max1363.c into max1363_write_thresh~~~~~~\n");	// add by ian test at 20170406
 	struct max1363_state *st = iio_priv(indio_dev);
 	/* make it handle signed correctly as well */
 	switch (st->chip_info->bits) {
@@ -1442,8 +1443,9 @@ static int max1363_initial_setup(struct max1363_state *st)
 		| MAX1363_SETUP_UNIPOLAR
 		| MAX1363_SETUP_NORESET;
 
-	if (st->vref)
+	if (st->vref) {
 		st->setupbyte |= MAX1363_SETUP_AIN3_IS_REF_EXT_TO_REF;
+	}
 	else
 		st->setupbyte |= MAX1363_SETUP_POWER_UP_INT_REF
 		  | MAX1363_SETUP_AIN3_IS_AIN3_REF_IS_INT;
@@ -1452,6 +1454,9 @@ static int max1363_initial_setup(struct max1363_state *st)
 	st->setupbyte = MAX1363_SETUP_BYTE(st->setupbyte);
 	st->current_mode = &max1363_mode_table[st->chip_info->default_mode];
 	st->configbyte = MAX1363_CONFIG_BYTE(st->configbyte);
+
+	printk("max1363.c st->setupbyte : %d\n", st->setupbyte);
+	printk("max1363.c st->configbyte : %d\n", st->configbyte);
 
 	return max1363_set_scan_mode(st);
 }
@@ -1472,7 +1477,7 @@ static int max1363_alloc_scan_masks(struct iio_dev *indio_dev)
 		bitmap_copy(masks + BITS_TO_LONGS(MAX1363_MAX_CHANNELS)*i,
 			    max1363_mode_table[st->chip_info->mode_list[i]]
 			    .modemask, MAX1363_MAX_CHANNELS);
-		printk("at max1363.c max1363_alloc_scan_masks mode_list[%d] = %d\n", i, max1363_mode_table[st->chip_info->mode_list[i]]);	// add by ian test at 20170406
+		// printk("at max1363.c max1363_alloc_scan_masks mode_list[%d] = %d\n", i, max1363_mode_table[st->chip_info->mode_list[i]]);	// add by ian test at 20170406
 	}	// add by ian test at 20170406
 
 	indio_dev->available_scan_masks = masks;
@@ -1546,6 +1551,7 @@ static int max1363_probe(struct i2c_client *client,
 	if (ret < 0)
 		return ret;
 
+
 	st = iio_priv(indio_dev);
 
 	st->reg = devm_regulator_get(&client->dev, "vcc");
@@ -1566,7 +1572,6 @@ static int max1363_probe(struct i2c_client *client,
 
 	st->vref_uv = st->chip_info->int_vref_mv * 1000;
 	vref = devm_regulator_get_optional(&client->dev, "vref");
-	printk("max1363.c Verf_uv is : %d\n", st->vref_uv);		// add by ian test at 20170406
 	if (!IS_ERR(vref)) {
 		int vref_uv;
 
@@ -1583,12 +1588,10 @@ static int max1363_probe(struct i2c_client *client,
 	}
 
 	if (i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
-		printk("at max1363.c into i2c_check_functionality I2C_FUNC_I2C is : %d\n", I2C_FUNC_I2C);		// add by ian test at 20170406
 		st->send = i2c_master_send;
 		st->recv = i2c_master_recv;
 	} else if (i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE)
 			&& st->chip_info->bits == 8) {
-		printk("at max1363.c into i2c_check_functionality I2C_FUNC_SMBUS_BYTE is : %d\n", I2C_FUNC_SMBUS_BYTE);		// add by ian test at 20170406
 		st->send = max1363_smbus_send;
 		st->recv = max1363_smbus_recv;
 	} else {
@@ -1600,6 +1603,7 @@ static int max1363_probe(struct i2c_client *client,
 	if (ret)
 		goto error_disable_reg;
 
+
 	/* Establish that the iio_dev is a child of the i2c device */
 	indio_dev->dev.parent = &client->dev;
 	indio_dev->name = id->name;
@@ -1607,6 +1611,7 @@ static int max1363_probe(struct i2c_client *client,
 	indio_dev->num_channels = st->chip_info->num_channels;
 	indio_dev->info = st->chip_info->info;
 	indio_dev->modes = INDIO_DIRECT_MODE;
+
 	ret = max1363_initial_setup(st);
 	if (ret < 0)
 		goto error_disable_reg;
@@ -1616,8 +1621,8 @@ static int max1363_probe(struct i2c_client *client,
 	if (ret)
 		goto error_disable_reg;
 
+
 	if (client->irq) {
-		printk("at max1363.c into client->req~~~~~~\n");	// add by ian test at 20170406
 		ret = devm_request_threaded_irq(&client->dev, st->client->irq,
 					   NULL,
 					   &max1363_event_handler,
@@ -1633,7 +1638,8 @@ static int max1363_probe(struct i2c_client *client,
 	if (ret < 0)
 		goto error_uninit_buffer;
 
-	printk("registered iio device %s\n", indio_dev);
+
+	//printk("registered iio device %s\n", indio_dev);
 	return 0;
 
 error_uninit_buffer:

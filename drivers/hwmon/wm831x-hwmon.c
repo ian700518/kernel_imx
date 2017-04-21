@@ -29,6 +29,7 @@
 #include <linux/mfd/wm831x/core.h>
 #include <linux/mfd/wm831x/auxadc.h>
 
+
 struct wm831x_hwmon {
 	struct wm831x *wm831x;
 	struct device *classdev;
@@ -54,6 +55,7 @@ static const char * const input_names[] = {
 static ssize_t show_voltage(struct device *dev,
 			    struct device_attribute *attr, char *buf)
 {
+
 	struct wm831x_hwmon *hwmon = dev_get_drvdata(dev);
 	int channel = to_sensor_dev_attr(attr)->index;
 	int ret;
@@ -163,6 +165,7 @@ static int wm831x_hwmon_probe(struct platform_device *pdev)
 	struct wm831x_hwmon *hwmon;
 	int ret;
 
+	printk("into hw831x_hwmon_probe at wm831x-hwmon.c~~~\n");
 	hwmon = devm_kzalloc(&pdev->dev, sizeof(struct wm831x_hwmon),
 			     GFP_KERNEL);
 	if (!hwmon)

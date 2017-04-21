@@ -50,6 +50,8 @@ source "drivers/char/Kconfig"
 
 source "drivers/i2c/Kconfig"
 
+source "drivers/iio/Kconfig"
+
 source "drivers/spi/Kconfig"
 
 source "drivers/hsi/Kconfig"
@@ -153,8 +155,6 @@ source "drivers/devfreq/Kconfig"
 source "drivers/extcon/Kconfig"
 
 source "drivers/memory/Kconfig"
-
-source "drivers/iio/Kconfig"
 
 source "drivers/ntb/Kconfig"
 

@@ -65,14 +65,13 @@ static void ft5x0x_ts_resume(struct early_suspend *handler);
 #endif
 
 struct ts_event {
-	u16 au16_x[CFG_MAX_TOUCH_POINTS];	/*x coordinate */
-	u16 au16_y[CFG_MAX_TOUCH_POINTS];	/*y coordinate */
-	u8 au8_touch_event[CFG_MAX_TOUCH_POINTS];	/*touch event:
-					0 -- down; 1-- contact; 2 -- contact */
-	u8 au8_finger_id[CFG_MAX_TOUCH_POINTS];	/*touch ID */	
+	u16 au16_x[CFG_MAX_TOUCH_POINTS];			/*x coordinate */
+	u16 au16_y[CFG_MAX_TOUCH_POINTS];			/*y coordinate */
+	u8 au8_touch_event[CFG_MAX_TOUCH_POINTS];	/*touch event: 0 -- down; 1-- contact; 2 -- contact */
+	u8 au8_finger_id[CFG_MAX_TOUCH_POINTS];		/*touch ID */	
 	u16 pressure[CFG_MAX_TOUCH_POINTS];
 	u16 area[CFG_MAX_TOUCH_POINTS];
-	u8 touch_point;	
+	u8 touch_point;
 	int touchs;
 	u8 touch_point_num;
 };
@@ -231,9 +230,7 @@ static int ft5x0x_read_Touchdata(struct ft5x0x_ts_data *data)
         if (!num_of_tps) {
             for (i = 0; i < CFG_MAX_TOUCH_POINTS; i++)  {
                 input_mt_slot(data->input_dev, i);
-                input_mt_report_slot_state(data->input_dev,
-                        MT_TOOL_FINGER,
-                        false);
+                input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, false);
             }
         }
     }
@@ -246,39 +243,30 @@ static int ft5x0x_read_Touchdata(struct ft5x0x_ts_data *data)
 		else
 			event->touch_point++;
 			
-			
-#if 1
-		event->au16_y[i] =
+		event->au16_x[i] =
                     (s16) (buf[FT_TOUCH_X_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
                     8 | (s16) buf[FT_TOUCH_X_L_POS + FT_TOUCH_STEP * i];
-                event->au16_x[i] =
-//                  ft5x_data.y_max-((s16) (buf[FT_TOUCH_Y_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
-//                  8 | (s16) buf[FT_TOUCH_Y_L_POS + FT_TOUCH_STEP * i]);
+        event->au16_y[i] =
                     (s16) (buf[FT_TOUCH_Y_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
                     8 | (s16) buf[FT_TOUCH_Y_L_POS + FT_TOUCH_STEP * i];
-#else
-		event->au16_x[i] =
-		    (s16) (buf[FT_TOUCH_X_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
-		    8 | (s16) buf[FT_TOUCH_X_L_POS + FT_TOUCH_STEP * i];
-		event->au16_y[i] =
-//		    ft5x_data.y_max-((s16) (buf[FT_TOUCH_Y_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
-//		    8 | (s16) buf[FT_TOUCH_Y_L_POS + FT_TOUCH_STEP * i]);
-                    (s16) (buf[FT_TOUCH_Y_H_POS + FT_TOUCH_STEP * i] & 0x0F) <<
-                    8 | (s16) buf[FT_TOUCH_Y_L_POS + FT_TOUCH_STEP * i];
-#endif
 		event->au8_touch_event[i] =
 		    buf[FT_TOUCH_EVENT_POS + FT_TOUCH_STEP * i] >> 6;
 		event->au8_finger_id[i] =
 		    (buf[FT_TOUCH_ID_POS + FT_TOUCH_STEP * i]) >> 4;
 
-	pr_info("wangdong tsv2:id=%d event=%d x=%d y=%d\n",
-			event->au8_finger_id[i],
-			event->au8_touch_event[i],
-			event->au16_x[i], event->au16_y[i]);
+		event->pressure[i] =
+			(buf[FT_TOUCH_XY_POS + FT_TOUCH_STEP * i]);//cannot constant value
+		event->area[i] =
+			(buf[FT_TOUCH_MISC + FT_TOUCH_STEP * i]) >> 4;
+
+	//pr_info("wangdong tsv2:id=%d event=%d x=%d[%x] y=%d[%x] pressure=%d area=%d\n",
+	//		event->au8_finger_id[i],
+	//		event->au8_touch_event[i],
+	//		event->au16_x[i], event->au16_x[i],event->au16_y[i], event->au16_y[i], event->pressure[i], event->area[i]);
 	}
 
 
-	event->pressure = FT_PRESS;
+	//event->pressure = FT_PRESS;
 
 	return 0;
 }
@@ -299,21 +287,17 @@ static void ft5x0x_report_value(struct ft5x0x_ts_data *data)
 
 		if (event->au8_touch_event[i] == 0
 			|| event->au8_touch_event[i] == 2) {
-			input_mt_report_slot_state(data->input_dev,
-				MT_TOOL_FINGER,
-				true);
-			input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
-					event->pressure);
-
-			input_report_abs(data->input_dev, ABS_MT_POSITION_X,
-					event->au16_x[i]);
-			input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
-					event->au16_y[i]);				
+			input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, true);
+			//input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, event->pressure);
+			input_report_abs(data->input_dev, ABS_MT_PRESSURE, event->pressure[i]);//0x3f
+			input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, event->area[i]);//0x05
+			input_report_abs(data->input_dev, ABS_MT_POSITION_X, event->au16_x[i]);
+			input_report_abs(data->input_dev, ABS_MT_POSITION_Y, event->au16_y[i]);	
+			//pr_info("Report value : x=%d[%x]\n", event->au16_x[i], event->au16_x[i]);
+			//pr_info("Report value : y=%d[%x]\n", event->au16_y[i], event->au16_y[i]);		
 		} else {
 			uppoint++;
-			input_mt_report_slot_state(data->input_dev,
-				MT_TOOL_FINGER,
-				false);
+			input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, false);
 		}
 	}
 
@@ -348,7 +332,7 @@ static irqreturn_t ft5x0x_ts_interrupt(int irq, void *dev_id)
 		ft5x0x_report_value(ft5x0x_ts);
 
 	enable_irq(ft5x0x_ts->irq);
-	pr_info("ft5x0x_ts_interrupt\n");
+	/* pr_info("ft5x0x_ts_interrupt\n"); */
 	return IRQ_HANDLED;
 }
 
@@ -444,12 +428,20 @@ static int ft5x0x_ts_probe(struct i2c_client *client,
 
 	__set_bit(EV_ABS, input_dev->evbit);
 	__set_bit(EV_KEY, input_dev->evbit);
+	__set_bit(EV_SYN, input_dev->evbit);
 	__set_bit(BTN_TOUCH, input_dev->keybit);
+	__set_bit(INPUT_PROP_DIRECT, input_dev->propbit);	// 表明设备的坐标直接和屏幕坐标向对应
+	//__set_bit(INPUT_PROP_POINTER, input_dev->propbit);
+	__set_bit(ABS_MT_POSITION_X, input_dev->absbit);
+	__set_bit(ABS_MT_POSITION_Y, input_dev->absbit);
 
-	input_mt_init_slots(input_dev, CFG_MAX_TOUCH_POINTS,0);
+	input_mt_init_slots(input_dev, CFG_MAX_TOUCH_POINTS, 0);
 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0, PRESS_MAX, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_X, 0, ft5x0x_ts->x_max, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, 0, ft5x0x_ts->y_max, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_TRACKING_ID, 0, 5, 0, 0);
 
 	/*init INTERRUPT pin*/
 	err = gpio_request(pdata->irq_gpio, "ft5x0x irq");

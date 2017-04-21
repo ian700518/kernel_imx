@@ -740,6 +740,7 @@ static int __init bt_init(void)
 {
 	int err;
 
+	printk("into bt_init at af_bluetooth.c");
 	BT_INFO("Core ver %s", VERSION);
 
 	bt_debugfs = debugfs_create_dir("bluetooth", NULL);

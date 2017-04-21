@@ -114,6 +114,18 @@
 			enable-active-high;						
 		};											
 */
+
+/*
+		reg_adc_ref: regulator@6 {
+			compatible = "regulator-fixed";
+			reg = <6>;
+			regulator-name = "adc-vref-supply";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			enable-active-high;
+		};
+
+*/
 		wlreg_on: fixedregulator@100 {
 			compatible = "regulator-fixed";
 			regulator-min-microvolt = <5000000>;
@@ -156,14 +168,12 @@
 			gpio-key;
 			linux,code = <KEY_VOLUMEUP>;
 		};
-
 		volume-down {
 			label = "Volume Down";
 			gpios = <&gpio5 20 1>;
 			gpio-key;
 			linux,code = <KEY_VOLUMEDOWN>;
 		};
-
 		/*以下是新增的A B C D和YES/NO 按键*/
 		key-a {
 			label = "Keya Button";
@@ -199,14 +209,14 @@
 			label = "Yes Button";
 			gpios = <&gpio5 19 1>;
 			gpio-key;
-			linux,code = <KEY_HOME>;//*0X134*//
+			linux,code = <BTN_Y>;//*0X134*//
 		};
 
 		no {
 			label = "No Button";
 			gpios = <&gpio5 18 1>;
 			gpio-key;
-			linux,code =<KEY_MENU>;//*0X102*//
+			linux,code =<BTN_Z>;//*0X102*//
 		};
 		/*五向键*/
 		joystick_up {
@@ -567,11 +577,12 @@
 		wlf,shared-lrclk;
 	};
 
-	adc@64 {
-		compatible = "maxim,max1037";
-		/* vcc-supply = <&reg_3v3>; */
-		reg = <0x64>;
-	};
+/*	adc@64 {								*/
+/*		compatible = "maxim,max1037";		*/
+		/* vcc-supply = <&reg_adc_ref>; */
+/*		vref-supply = <&reg_adc_ref>;		*/
+/*		reg = <0x64>;						*/
+/*	};										*/
 
 /*	isl29023@44 {						*/
 /*		compatible = "fsl,isl29023";	*/
@@ -673,6 +684,10 @@
 				MX6QDL_PAD_NANDF_D5__GPIO2_IO05			0x80000000		/* BT_HOST_WAKE */
 				MX6QDL_PAD_GPIO_4__GPIO1_IO04			0x80000000		/* SD2_CD */
                 MX6QDL_PAD_GPIO_2__GPIO1_IO02 			0x80000000  	/* SD2_WP*/
+				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 		0x80000000		/* KP_MK1 */
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 		0x80000000		/* KP_MK2 */
+				MX6QDL_PAD_CSI0_DAT18__GPIO6_IO04		0x80000000		/* KP_MK4 */
+				MX6QDL_PAD_CSI0_DAT19__GPIO6_IO05		0x80000000		/* KP_MK5 */
 			>;
 		};
 
@@ -722,12 +737,7 @@
 		};												
 
 		pinctrl_gpio_keys: gpio_keysgrp {
-			fsl,pins = <
-				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01 		0x80000000		/* KP_MK1 */
-				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02 		0x80000000		/* KP_MK2 */
-				MX6QDL_PAD_CSI0_DAT18__GPIO6_IO04		0x80000000		/* KP_MK4 */
-				MX6QDL_PAD_CSI0_DAT19__GPIO6_IO05		0x80000000		/* KP_MK5 */
-				
+			fsl,pins = <				
 				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21		0x80000000		/* vol+ */
 				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20		0x80000000		/* vol- */
 
@@ -1098,7 +1108,7 @@
 &pcie {								
 /*	power-on-gpio = <&gpio3 19 0>;						*/
 /*	reset-gpio = <&gpio7 12 0>;							*/
-	status = "disabled";		
+/*	status = "disabled";								*/
 };									
 
 &pwm1 {

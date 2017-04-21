@@ -252,6 +252,8 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 	int ret;
 	struct device_node *np = i2c->dev.of_node;
 
+	printk("into wm831x_i2c_probe at wm831x-i2c.c");
+
 	wm831x = devm_kzalloc(&i2c->dev, sizeof(struct wm831x), GFP_KERNEL);
 	if (wm831x == NULL)
 		return -ENOMEM;
