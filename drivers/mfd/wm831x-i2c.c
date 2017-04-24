@@ -259,6 +259,7 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 		return -ENOMEM;
 
 	/* for tvbs */
+/*
 	tvbs_wm8326_pdata.batt_adc_sel_gpio = of_get_named_gpio(np, "battadc-gpios", 0);
 	if (gpio_is_valid(tvbs_wm8326_pdata.batt_adc_sel_gpio)) {
 		ret = gpio_request_one(tvbs_wm8326_pdata.batt_adc_sel_gpio, GPIOF_OUT_INIT_HIGH,
@@ -267,6 +268,7 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 			pr_warn("failed to request battadc-sel-gpios gpio\n");
 	} else
 		dev_warn(&i2c->dev, "no batt_adc_sel pin available\n");
+*/
 
 	tvbs_wm8326_pdata.backup_acok_gpio = of_get_named_gpio(np, "acok-gpios", 0);
 	if (gpio_is_valid(tvbs_wm8326_pdata.backup_acok_gpio)) {
@@ -299,7 +301,8 @@ static int wm831x_i2c_probe(struct i2c_client *i2c,
 	}
 	//printk("=====i2c irq %d\n", i2c->irq);
 
-	return wm831x_device_init(wm831x, id->driver_data, i2c->irq);
+	return wm831x_irq_init(wm831x, i2c->irq);
+	//return wm831x_device_init(wm831x, id->driver_data, i2c->irq);
 }
 
 static int wm831x_i2c_remove(struct i2c_client *i2c)

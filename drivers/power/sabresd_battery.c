@@ -32,7 +32,7 @@
 #include <linux/power/sabresd_battery.h>
 #include <linux/slab.h>
 
-#define	BATTERY_UPDATE_INTERVAL	5 /*seconds*/
+#define	BATTERY_UPDATE_INTERVAL	5  /*seconds*/
 #define LOW_VOLT_THRESHOLD	2800000
 #define HIGH_VOLT_THRESHOLD	4200000
 #define ADC_SAMPLE_COUNT	6
@@ -170,9 +170,12 @@ u32 calibrate_battery_capability_percent(struct max8903_data *data)
 		tableSize = sizeof(chargingTable)/
 			sizeof(chargingTable[0]);
 	}
+	
 	for (i = 0; i < tableSize; i++) {
-		if (data->voltage_uV >= pTable[i].voltage)
+		if (data->voltage_uV >= pTable[i].voltage) {
+			printk("voltage_uv is : %d\n Table_voltage is : %d\n", data->voltage_uV, pTable[i].voltage);
 			return	pTable[i].percent;
+		}
 	}
 
 	return 0;
@@ -193,7 +196,8 @@ static enum power_supply_property max8903_battery_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 };
 
-extern u32 max11801_read_adc(void);
+//extern u32 max11801_read_adc(void);
+extern u32 max1307_read_adc(void);
 
 static void max8903_charger_update_status(struct max8903_data *data)
 {
@@ -239,10 +243,16 @@ u32 calibration_voltage(struct max8903_data *data)
 
 	/* simple average */
 	for (i = 0; i < ADC_SAMPLE_COUNT; i++)
-		voltage_data += max11801_read_adc()-offset;
+	{
+		//voltage_data += max11801_read_adc()-offset;
+		voltage_data += max1307_read_adc() + offset;
+		mdelay(100);
+	} 
 	voltage_data = voltage_data / ADC_SAMPLE_COUNT;
 	dev_dbg(data->dev, "volt: %d\n", voltage_data);
 
+	printk("at calibration_voltage offset is : %d\n", offset);
+	printk("at calibration_voltage voltage_data is : %d\n", voltage_data);
 	return voltage_data;
 }
 
@@ -408,6 +418,7 @@ static irqreturn_t max8903_usbin(int irq, void *_data)
 	struct max8903_pdata *pdata = data->pdata;
 	bool usb_in = false;
 
+	printk("usb_in is : %d~~~~~~~~~~\n", usb_in);
 	if (pdata->uok)
 		usb_in = gpio_get_value(pdata->uok) ? false : true;
 	if (usb_in == data->usb_in)
@@ -435,9 +446,9 @@ static irqreturn_t max8903_fault(int irq, void *_data)
 	data->fault = fault;
 
 	if (fault)
-		dev_err(data->dev, "Charger suffers a fault and stops.\n");
+		dev_err(data->dev, "fault is 1, Charger suffers a fault and stops.\n");
 	else
-		dev_err(data->dev, "Charger recovered from a fault.\n");
+		dev_err(data->dev, "fault is 0, Charger recovered from a fault.\n");
 	max8903_charger_update_status(data);
 	power_supply_changed(&data->psy);
 	power_supply_changed(&data->bat);
@@ -454,6 +465,7 @@ static irqreturn_t max8903_chg(int irq, void *_data)
 
 	chg_state = gpio_get_value(pdata->chg) ? false : true;
 
+	printk("at max8903_chg into charge mode~~~~~\n");
 	if (chg_state == data->chg_state)
 		return IRQ_HANDLED;
 	data->chg_state = chg_state;
@@ -474,6 +486,7 @@ static void max8903_battery_work(struct work_struct *work)
 
 	max8903_charger_update_status(data);
 	max8903_battery_update_status(data);
+	//printk("at max8903_battery_work battery voltage : %d mV\n", data->voltage_uV);
 	dev_dbg(data->dev, "battery voltage: %4d mV\n", data->voltage_uV);
 	dev_dbg(data->dev, "charger online status: %d\n",
 		data->charger_online);
@@ -658,6 +671,7 @@ static int max8903_probe(struct platform_device *pdev)
 	int usb_in = 0;
 	int retval;
 
+	//printk("into max8903_probe at sabresd_battery.c\n");
 	data = devm_kzalloc(dev, sizeof(struct max8903_data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
@@ -990,6 +1004,20 @@ static struct platform_driver max8903_driver = {
 		.of_match_table = max8903_dt_ids,
 	},
 };
+/*
+static int __init sabresd_battery_init(void)
+{
+	return platform_driver_register(&max8903_driver);
+}
+
+static void __exit sabresd_battery_exit(void)
+{
+	return platform_driver_unregister(&max8903_driver);
+}
+
+module_init(sabresd_battery_init);
+module_exit(sabresd_battery_exit);
+*/
 module_platform_driver(max8903_driver);
 
 MODULE_LICENSE("GPL v2");

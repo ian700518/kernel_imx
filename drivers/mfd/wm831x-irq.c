@@ -620,8 +620,8 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
 	else
 		i = WM831X_IRQ_OD;
 
-	wm831x_set_bits(wm831x, WM831X_IRQ_CONFIG,
-			WM831X_IRQ_OD, i);
+	//wm831x_set_bits(wm831x, WM831X_IRQ_CONFIG,
+	//		WM831X_IRQ_OD, i);
 
 	wm831x->irq = irq;
 	wm831x->irq_domain = domain;
@@ -653,7 +653,7 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
 	}
 
 	/* Enable top level interrupts, we mask at secondary level */
-	wm831x_reg_write(wm831x, WM831X_SYSTEM_INTERRUPTS_MASK, 0);
+	//wm831x_reg_write(wm831x, WM831X_SYSTEM_INTERRUPTS_MASK, 0);
 
 	return 0;
 }

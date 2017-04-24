@@ -100,6 +100,12 @@
 #define MAX1363_MAX_CHANNELS 25
 
 
+// add for detect battery voltage by ian at 20170421 //
+// start 
+static struct iio_dev *indio_battery_dev;
+// end
+
+
 /**
  * struct max1363_mode - scan mode information
  * @conf:	The corresponding value of the configuration register
@@ -359,6 +365,8 @@ static int max1363_set_scan_mode(struct max1363_state *st)
 			    | MAX1363_SE_DE_MASK);
 	st->configbyte |= st->current_mode->conf;
 
+	//printk("max1363_set_scan_mode st->current_mode->conf : %d\n", st->current_mode->conf);
+	//printk("max1363_set_scan_mode st->configbyte : %d\n", st->configbyte);
 	return max1363_write_basic_config(st);
 }
 
@@ -388,6 +396,7 @@ static int max1363_read_single_chan(struct iio_dev *indio_dev,
 
 	/* Check to see if current scan mode is correct */
 	if (st->current_mode != &max1363_mode_table[chan->address]) {
+		//printk("max1363_read_single_chan current scan mode isnt correct~~~~~~~\n");
 		/* Update scan mode if needed */
 		st->current_mode = &max1363_mode_table[chan->address];
 		ret = max1363_set_scan_mode(st);
@@ -412,6 +421,7 @@ static int max1363_read_single_chan(struct iio_dev *indio_dev,
 		}
 		data = rxbuf[0];
 	}
+	//printk("data is : %d at max1363_read_single_chan\n", data);
 	*val = data;
 error_ret:
 	mutex_unlock(&indio_dev->mlock);
@@ -682,6 +692,32 @@ enum { max1361,
        max11647
 };
 
+
+// add for detect battery voltage by ian at 20170421 //
+// start 
+u32 max1307_read_adc(void)
+{
+	int adc;
+	int ret = 0;
+
+	if(!indio_battery_dev)
+	{
+		pr_err("FAIL max1307 not initialize\n");
+		return -1;
+	}
+	
+	ret = max1363_read_single_chan(indio_battery_dev, &max1036_channels[2],
+			&adc, IIO_CHAN_INFO_RAW);
+	printk("adc is : %d\n", adc);
+	if(ret < 0)
+	{
+		pr_err("FAIL max1307 not initialize\n");
+		return -1;
+	}	
+	return ((adc*3300)/255);
+}
+EXPORT_SYMBOL_GPL(max1307_read_adc);
+// end
 
 static const int max1363_monitor_speeds[] = { 133000, 665000, 33300, 16600,
 					      8300, 4200, 2000, 1000 };
@@ -1032,6 +1068,9 @@ static int max1363_update_scan_mode(struct iio_dev *indio_dev,
 	st->current_mode = max1363_match_mode(scan_mask, st->chip_info);
 	if (!st->current_mode)
 		return -EINVAL;
+	
+	//printk("at max1363_update_scan_mode scan_mask is : %d\n", *scan_mask);
+	//printk("at max1363_update_scan_mode st->current_mode->conf is : %d\n", st->current_mode->conf);
 	max1363_set_scan_mode(st);
 	return 0;
 }
@@ -1110,7 +1149,8 @@ static const struct max1363_chip_info max1363_chip_info_tbl[] = {
 		.int_vref_mv = 2048,
 		.mode_list = max1236_mode_list,
 		.num_modes = ARRAY_SIZE(max1236_mode_list),
-		.default_mode = s0to3,
+		//.default_mode = s0to3,
+		.default_mode = s0to2,
 		.info = &max1238_info,
 		.channels = max1036_channels,
 		.num_channels = ARRAY_SIZE(max1036_channels),
@@ -1455,8 +1495,8 @@ static int max1363_initial_setup(struct max1363_state *st)
 	st->current_mode = &max1363_mode_table[st->chip_info->default_mode];
 	st->configbyte = MAX1363_CONFIG_BYTE(st->configbyte);
 
-	printk("max1363.c st->setupbyte : %d\n", st->setupbyte);
-	printk("max1363.c st->configbyte : %d\n", st->configbyte);
+	//printk("max1363.c st->setupbyte : %d\n", st->setupbyte);
+	//printk("max1363.c st->configbyte : %d\n", st->configbyte);
 
 	return max1363_set_scan_mode(st);
 }
@@ -1473,13 +1513,15 @@ static int max1363_alloc_scan_masks(struct iio_dev *indio_dev)
 	if (!masks)
 		return -ENOMEM;
 
+	//printk("at max1363_alloc_scan_masks num_modes : %d\n", st->chip_info->num_modes);
 	for (i = 0; i < st->chip_info->num_modes; i++) {
 		bitmap_copy(masks + BITS_TO_LONGS(MAX1363_MAX_CHANNELS)*i,
 			    max1363_mode_table[st->chip_info->mode_list[i]]
 			    .modemask, MAX1363_MAX_CHANNELS);
-		// printk("at max1363.c max1363_alloc_scan_masks mode_list[%d] = %d\n", i, max1363_mode_table[st->chip_info->mode_list[i]]);	// add by ian test at 20170406
+		//printk("at max1363.c max1363_alloc_scan_masks mode_list[%d].modemask = %d\n", i, max1363_mode_table[st->chip_info->mode_list[i]].modemask);	// add by ian test at 20170406
 	}	// add by ian test at 20170406
 
+	//printk("at max1363_alloc_scan_masks masks is : %d\n", masks);
 	indio_dev->available_scan_masks = masks;
 
 	return 0;
@@ -1623,6 +1665,7 @@ static int max1363_probe(struct i2c_client *client,
 
 
 	if (client->irq) {
+		//printk("into client->irq~~~~~~~\n");
 		ret = devm_request_threaded_irq(&client->dev, st->client->irq,
 					   NULL,
 					   &max1363_event_handler,
@@ -1638,8 +1681,8 @@ static int max1363_probe(struct i2c_client *client,
 	if (ret < 0)
 		goto error_uninit_buffer;
 
-
-	//printk("registered iio device %s\n", indio_dev);
+	printk("registered iio device %s\n", indio_dev->name);
+	indio_battery_dev = indio_dev;
 	return 0;
 
 error_uninit_buffer:
