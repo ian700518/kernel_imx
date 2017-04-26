@@ -281,7 +281,7 @@ static void ft5x0x_report_value(struct ft5x0x_ts_data *data)
 	int uppoint = 0;
 
 	/*protocol B*/
-	pr_info("event->touch_point : %d\n", event->touch_point);
+	//pr_info("event->touch_point : %d\n", event->touch_point);
 	for (i = 0; i < event->touch_point; i++) {
 		input_mt_slot(data->input_dev, event->au8_finger_id[i]);
 
@@ -292,7 +292,9 @@ static void ft5x0x_report_value(struct ft5x0x_ts_data *data)
 			input_report_abs(data->input_dev, ABS_MT_PRESSURE, event->pressure[i]);//0x3f
 			input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, event->area[i]);//0x05
 			input_report_abs(data->input_dev, ABS_MT_POSITION_X, event->au16_x[i]);
-			input_report_abs(data->input_dev, ABS_MT_POSITION_Y, event->au16_y[i]);	
+			input_report_abs(data->input_dev, ABS_MT_POSITION_Y, event->au16_y[i]);
+			//input_report_abs(data->input_dev, ABS_MT_POSITION_X, (event->au16_y[i]*4/3));
+			//input_report_abs(data->input_dev, ABS_MT_POSITION_Y, (event->au16_x[i]*3/4));	
 			//pr_info("Report value : x=%d[%x]\n", event->au16_x[i], event->au16_x[i]);
 			//pr_info("Report value : y=%d[%x]\n", event->au16_y[i], event->au16_y[i]);		
 		} else {
