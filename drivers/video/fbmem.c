@@ -673,7 +673,7 @@ int fb_prepare_logo(struct fb_info *info, int rotate)
 	return fb_prepare_extra_logos(info, fb_logo.logo->height, yres);
 	// Add By Ian at 2017-02-22 
 	//添加的代码,设置logo居中显示 
-	// return fb_prepare_extra_logos(info, fb_logo.logo->height, yres)+((info->var.yres )>>1);
+	//return fb_prepare_extra_logos(info, fb_logo.logo->height, yres)+((info->var.yres )>>1);
 }
 
 int fb_show_logo(struct fb_info *info, int rotate)

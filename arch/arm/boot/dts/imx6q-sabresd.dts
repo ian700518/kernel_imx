@@ -21,9 +21,9 @@
 };
 
 &battery {						
-	offset-charger = <1900>;		
-	offset-discharger = <1694>;		
-	offset-usb-charger = <1685>;	
+	offset-charger = <350>;		/* <1900>;	*/	
+	offset-discharger = <144>;	/* <1694>;	*/		
+	offset-usb-charger = <135>;	/* <1685>;	*/	
 };								
 
 &ldb {						

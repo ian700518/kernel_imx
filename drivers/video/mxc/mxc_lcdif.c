@@ -178,21 +178,26 @@ static int lcd_get_of_property(struct platform_device *pdev,
 			err = 0;	/* two LCDs shares the GPIO */
 			pr_warn("failed to request LCD power enable gpio\n");
 		}
+		gpio_direction_output(pwren_gpio, 1);
 	}
 
 	rst_gpio = of_get_named_gpio(np, "rst-gpios", 0);
 	if (gpio_is_valid(rst_gpio)) {
 		err = gpio_request_one(rst_gpio, GPIOF_OUT_INIT_HIGH,
 				"rst-gpios");
-		if (err)
+		if (err) {
+			err = 0;
 			pr_warn("failed to request LCD RST gpio\n");
+		}
 	}
 	
-	mdelay(10);
-	gpio_set_value(rst_gpio, 0);
-	mdelay(10);
-	gpio_set_value(rst_gpio, 1);
-	mdelay(500);
+	//mdelay(500);
+	//gpio_set_value(rst_gpio, 0);
+	gpio_direction_output(rst_gpio, 0);
+	//mdelay(1);
+	//gpio_set_value(rst_gpio, 1);
+	gpio_direction_output(rst_gpio, 1);
+	//mdelay(1);
 
 	return err;
 }

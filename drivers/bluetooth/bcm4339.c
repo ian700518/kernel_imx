@@ -37,9 +37,9 @@
 #include <linux/termios.h>
 #include <linux/uaccess.h>
 #include <linux/wakelock.h>
-#include "bcm4339_bt_lpm.h"
-//#include <mach/gpiomux.h>
-//#include <mach/msm_serial_hs.h>
+#include <mach/bcm4339_bt_lpm.h>
+#include <mach/gpiomux.h>
+#include <mach/msm_serial_hs.h>
 #include <net/bluetooth/bluetooth.h>
 
 #define D_BCM_BLUETOOTH_CONFIG_MATCH_TABLE   "bcm,bcm4339"
@@ -74,11 +74,10 @@ static struct bcm4339_data *bcm4339_my_data;
 static struct rfkill *bt_rfkill;
 static bool bt_enabled;
 static struct regulator *bt_batfet;
-//static char bt_wake_request[2];
-//static bool bt_sleep;
+static char bt_wake_request[2];
+static bool bt_sleep;
 struct proc_dir_entry *bluetooth_dir, *wakeup_dir;
 
-/*
 struct bcm_bt_lpm {
 	int wake;
 	int host_wake;
@@ -94,16 +93,15 @@ struct bcm_bt_lpm {
 	struct mutex mutex;
 	struct work_struct enter_lpm_work;
 } bt_lpm;
-*/
 
-//static void bcm_bt_lpm_exit_lpm(void);
+static void bcm_bt_lpm_exit_lpm(void);
 
 static int bcm4339_bt_rfkill_set_power(void *data, bool blocked)
 {
 	int regOnGpio;
 
 	BT_DBG("Bluetooth device set power\n");
-	printk("Bluetooth device set power\n");
+
 	regOnGpio = gpio_get_value(bcm4339_my_data->gpios[BT_REG_ON_PIN]);
 	if (!bt_batfet) {
 		bt_batfet = regulator_get(NULL, "batfet");
@@ -127,7 +125,6 @@ static int bcm4339_bt_rfkill_set_power(void *data, bool blocked)
 		gpio_set_value(bcm4339_my_data->gpios[BT_REG_ON_PIN], 1);
 		gpio_request(bcm4339_my_data->gpios[BT_HOST_WAKE_PIN],
 			"BT_HOST_WAKE"); /* NO_PULL */
-		printk("into !blocked condition at function bcm4339_bt_rfkill_set_power");
 	} else {
 		if (!regOnGpio) {
 			BT_DBG("Bluetooth device is already power off:%d\n",
@@ -138,7 +135,6 @@ static int bcm4339_bt_rfkill_set_power(void *data, bool blocked)
 		gpio_set_value(bcm4339_my_data->gpios[BT_REG_ON_PIN], 0);
 		if (bt_batfet)
 			regulator_disable(bt_batfet);
-		printk("into blocked condition at function bcm4339_bt_rfkill_set_power");
 	}
 	bt_enabled = !blocked;
 
@@ -149,14 +145,12 @@ static const struct rfkill_ops bcm4339_bt_rfkill_ops = {
 	.set_block = bcm4339_bt_rfkill_set_power,
 };
 
-/*
 static enum hrtimer_restart enter_lpm(struct hrtimer *timer)
 {
 	schedule_work(&bt_lpm.enter_lpm_work);
 	return HRTIMER_NORESTART;
 }
-*/
-/*
+
 static void enter_lpm_work(struct work_struct *data)
 {
 	BT_DBG("Bluetooth device sleep\n");
@@ -176,9 +170,8 @@ static void enter_lpm_work(struct work_struct *data)
 	}
 	mutex_unlock(&bt_lpm.mutex);
 }
-*/
-/*
-void bcm_bt_lpm_reset_timer(void)
+
+static void bcm_bt_lpm_reset_timer(void)
 {
 	mutex_lock(&bt_lpm.mutex);
 
@@ -188,10 +181,8 @@ void bcm_bt_lpm_reset_timer(void)
 		HRTIMER_MODE_REL);
 	mutex_unlock(&bt_lpm.mutex);
 }
-EXPORT_SYMBOL(bcm_bt_lpm_reset_timer);
-*/
-/*
-void bcm_bt_lpm_exit_lpm(void)
+
+static void bcm_bt_lpm_exit_lpm(void)
 {
 	mutex_lock(&bt_lpm.mutex);
 
@@ -210,18 +201,13 @@ void bcm_bt_lpm_exit_lpm(void)
 		HRTIMER_MODE_REL);
 	mutex_unlock(&bt_lpm.mutex);
 }
-EXPORT_SYMBOL(bcm_bt_lpm_exit_lpm);
-*/
 
-/*
 void bcm_bt_lpm_exit_lpm_locked(struct uart_port *uport)
 {
 	bt_lpm.uport = uport;
 }
 EXPORT_SYMBOL(bcm_bt_lpm_exit_lpm_locked);
-*/
 
-/*
 static irqreturn_t host_wake_isr(int irq, void *dev)
 {
 	int host_wake;
@@ -265,9 +251,7 @@ unlock_mutex:
 	mutex_unlock(&bt_lpm.mutex);
 	return IRQ_HANDLED;
 }
-*/
 
-/*
 static int bcm_bt_lpm_init(struct platform_device *pdev)
 {
 	int irq;
@@ -277,7 +261,7 @@ static int bcm_bt_lpm_init(struct platform_device *pdev)
 
 	hrtimer_init(&bt_lpm.enter_lpm_timer, CLOCK_MONOTONIC,
 		HRTIMER_MODE_REL);
-	bt_lpm.enter_lpm_delay = ktime_set(10, 0);  // 10 sec 
+	bt_lpm.enter_lpm_delay = ktime_set(10, 0);  /* 10 sec */
 	bt_lpm.enter_lpm_timer.function = enter_lpm;
 
 	bt_lpm.host_wake = 0;
@@ -307,7 +291,6 @@ static int bcm_bt_lpm_init(struct platform_device *pdev)
 
 	return 0;
 }
-*/
 
 static void bcm4339_bluetooth_free_gpio(void)
 {
@@ -321,15 +304,13 @@ static void bcm4339_bluetooth_free_gpio(void)
 static int bcm4339_bluetooth_dev_init(struct platform_device *pdev,
 				struct bcm4339_data *my_data) {
 	int i, ret, gpio;
-	//unsigned int flags;
+	unsigned int flags;
 	struct device_node *of_node = pdev->dev.of_node;
 
 	my_data->is_enable = false;
 
 	for (i = 0; i < ARRAY_SIZE(gpio_rsrcs); i++) {
-		//gpio = of_get_gpio_flags(of_node, i, &flags);
-		//gpio = of_get_gpio(of_node, i);
-		gpio = of_get_named_gpio(of_node, gpio_rsrcs[req_ids[i]], 0);
+		gpio = of_get_gpio_flags(of_node, i, &flags);
 		if (!gpio_is_valid(gpio)) {
 			dev_err(&pdev->dev, "%s: invalid gpio #%s: %d\n",
 				__func__, gpio_rsrcs[i], gpio);
@@ -410,10 +391,7 @@ static int bcm4339_bluetooth_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "bcm4339_bluetooth_probe rfkill_register fail\n");
 		goto  error_free_gpio;
 	}
-	
-	dev_info(&pdev->dev, "bluetooth register driver bcm4339");
-	printk("bcm4339_bluetooth_probe register success\n");
-/*
+
 	ret = bcm_bt_lpm_init(pdev);
 	if (ret) {
 		rfkill_unregister(bt_rfkill);
@@ -422,7 +400,6 @@ static int bcm4339_bluetooth_probe(struct platform_device *pdev)
 		ret = -1;
 		goto  error_free_gpio;
 	}
-*/
 	return 0;
 
 error_free_gpio:
@@ -434,7 +411,6 @@ error_of_node:
 	return ret;
 }
 
-/*
 static int bcm4339_read_proc_proto(char *page, char **start, off_t offset,
 					int count, int *eof, void *data)
 {
@@ -451,9 +427,7 @@ static int bcm4339_read_proc_proto(char *page, char **start, off_t offset,
 	*eof = 1;
 	return outbyte;
 }
-*/
 
-/*
 static int bcm4339_write_proc_proto(struct file *file, const char *buffer,
 					unsigned long count, void *data)
 {
@@ -478,21 +452,17 @@ static int bcm4339_write_proc_proto(struct file *file, const char *buffer,
 
 	bt_wake_request[0] = proto;
 
-	// claim that we wrote everything
+	/* claim that we wrote everything */
 	return count;
 }
-*/
 
-/*
 static void bcm4339_proc_exit(void)
 {
 	remove_proc_entry("proto", wakeup_dir);
 	remove_proc_entry("wakeup", bluetooth_dir);
 	remove_proc_entry("bluetooth", 0);
 }
-*/
 
-/*
 static int bcm4339_proc_init(void)
 {
 	struct proc_dir_entry *ent;
@@ -512,7 +482,7 @@ static int bcm4339_proc_init(void)
 		return -ENOMEM;
 	}
 
-	// read/write proc entries 
+	/* read/write proc entries */
 	ent = create_proc_entry("proto", 0, wakeup_dir);
 	if (ent == NULL) {
 		BT_ERR("Unable to create /proc/%s/proto entry\n", PROC_DIR);
@@ -527,14 +497,14 @@ fail:
 	bcm4339_proc_exit();
 	return retval;
 }
-*/
+
 static int bcm4339_bluetooth_remove(struct platform_device *pdev)
 {
 	dev_dbg(&pdev->dev, "bcm4339_bluetooth_remove\n");
 	rfkill_unregister(bt_rfkill);
 	rfkill_destroy(bt_rfkill);
 
-	//wake_lock_destroy(&bt_lpm.wake_lock);
+	wake_lock_destroy(&bt_lpm.wake_lock);
 	kzfree(bcm4339_my_data);
 
 	return 0;
@@ -580,19 +550,19 @@ static struct platform_driver bcm4339_bluetooth_platform_driver = {
 
 static int __init bcm4339_bluetooth_init(void)
 {
-	//int ret;
+	int ret;
 	bt_enabled = false;
-	//ret = bcm4339_proc_init();
-	//if (ret < 0) {
-	//	BT_ERR("bcm4339_proc_init() failed\n");
-	//	return ret;
-	//}
+	ret = bcm4339_proc_init();
+	if (ret < 0) {
+		BT_ERR("bcm4339_proc_init() failed\n");
+		return ret;
+	}
 	return platform_driver_register(&bcm4339_bluetooth_platform_driver);
 }
 
 static void __exit bcm4339_bluetooth_exit(void)
 {
-	//bcm4339_proc_exit();
+	bcm4339_proc_exit();
 	platform_driver_unregister(&bcm4339_bluetooth_platform_driver);
 }
 

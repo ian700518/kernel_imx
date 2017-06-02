@@ -88,6 +88,7 @@
 #include <asm/smp.h>
 #endif
 
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -481,6 +482,8 @@ asmlinkage void __init start_kernel(void)
 	char * command_line;
 	extern const struct kernel_param __start___param[], __stop___param[];
 
+
+
 	/*
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
@@ -524,6 +527,7 @@ asmlinkage void __init start_kernel(void)
 		   -1, -1, &unknown_bootoption);
 
 	jump_label_init();
+
 
 	/*
 	 * These use large bootmem allocations and must precede

@@ -27,6 +27,11 @@ config LOGO_LINUX_CLUT224
 	bool "Standard 224-color Linux logo"
 	default y
 
+# add by ian for doobo logo at 2017-03-12
+config LOGO_DOOBO_CLUT224
+	bool "Standard 224-color doobo logo"
+	default y
+
 config LOGO_BLACKFIN_VGA16
 	bool "16-colour Blackfin Processor Linux logo"
 	depends on BLACKFIN
@@ -80,11 +85,6 @@ config LOGO_SUPERH_CLUT224
 config LOGO_M32R_CLUT224
 	bool "224-color M32R Linux logo"
 	depends on M32R
-	default y
-
-# add by ian for doobo logo at 2017-03-12
-config LOGO_DOOBO_CLUT224
-	bool "Standard 224-color doobo logo"
 	default y
 
 endif # LOGO

@@ -32,10 +32,10 @@
 #include <linux/power/sabresd_battery.h>
 #include <linux/slab.h>
 
-#define	BATTERY_UPDATE_INTERVAL	5  /*seconds*/
+#define	BATTERY_UPDATE_INTERVAL	30  /*seconds*/
 #define LOW_VOLT_THRESHOLD	2800000
 #define HIGH_VOLT_THRESHOLD	4200000
-#define ADC_SAMPLE_COUNT	6
+#define ADC_SAMPLE_COUNT	20
 
 struct max8903_data {
 	struct max8903_pdata *pdata;
@@ -173,7 +173,7 @@ u32 calibrate_battery_capability_percent(struct max8903_data *data)
 	
 	for (i = 0; i < tableSize; i++) {
 		if (data->voltage_uV >= pTable[i].voltage) {
-			printk("voltage_uv is : %d\n Table_voltage is : %d\n", data->voltage_uV, pTable[i].voltage);
+			//printk("voltage_uv is : %d\n Table_voltage is : %d\n", data->voltage_uV, pTable[i].voltage);
 			return	pTable[i].percent;
 		}
 	}
@@ -197,7 +197,7 @@ static enum power_supply_property max8903_battery_props[] = {
 };
 
 //extern u32 max11801_read_adc(void);
-extern u32 max1307_read_adc(void);
+extern u32 max1307_read_adc(int channel);
 
 static void max8903_charger_update_status(struct max8903_data *data)
 {
@@ -245,8 +245,8 @@ u32 calibration_voltage(struct max8903_data *data)
 	for (i = 0; i < ADC_SAMPLE_COUNT; i++)
 	{
 		//voltage_data += max11801_read_adc()-offset;
-		voltage_data += max1307_read_adc() + offset;
-		mdelay(100);
+		voltage_data += max1307_read_adc(2) + offset;
+		//mdelay(100);
 	} 
 	voltage_data = voltage_data / ADC_SAMPLE_COUNT;
 	dev_dbg(data->dev, "volt: %d\n", voltage_data);

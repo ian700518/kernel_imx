@@ -856,6 +856,7 @@ static void imx_set_mctrl(struct uart_port *port, unsigned int mctrl)
 		temp |= UTS_LOOP;
 	writel(temp, sport->port.membase + uts_reg(sport));
 }
+EXPORT_SYMBOL(imx_set_mctrl);
 
 /*
  * Interrupts always disabled.
@@ -2131,6 +2132,8 @@ static int serial_imx_probe(struct platform_device *pdev)
 	imx_ports[sport->port.line] = sport;
 
 	platform_set_drvdata(pdev, sport);
+
+	dev_info(&pdev->dev, "tty driver success\n");
 
 	return uart_add_one_port(&imx_reg, &sport->port);
 }

@@ -695,26 +695,31 @@ enum { max1361,
 
 // add for detect battery voltage by ian at 20170421 //
 // start 
-u32 max1307_read_adc(void)
+u32 max1307_read_adc(int channel)
 {
 	int adc;
 	int ret = 0;
 
+	if(channel < 0 || channel > 2)
+	{
+		pr_err("FAIL max1307 channel number error\n");
+		return -1;
+	}
 	if(!indio_battery_dev)
 	{
 		pr_err("FAIL max1307 not initialize\n");
 		return -1;
 	}
-	
-	ret = max1363_read_single_chan(indio_battery_dev, &max1036_channels[2],
+
+	ret = max1363_read_single_chan(indio_battery_dev, &max1036_channels[channel],
 			&adc, IIO_CHAN_INFO_RAW);
-	printk("adc is : %d\n", adc);
+	//printk("adc is : %d\n", adc);
 	if(ret < 0)
 	{
 		pr_err("FAIL max1307 not initialize\n");
 		return -1;
 	}	
-	return ((adc*3300)/255);
+	return (((adc*3300)*2)/255);
 }
 EXPORT_SYMBOL_GPL(max1307_read_adc);
 // end
