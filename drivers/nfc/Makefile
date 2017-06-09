@@ -10,6 +10,7 @@ obj-$(CONFIG_NFC_MEI_PHY)	+= mei_phy.o
 obj-$(CONFIG_NFC_SIM)		+= nfcsim.o
 obj-$(CONFIG_NFC_PORT100)	+= port100.o
 obj-$(CONFIG_NFC_MRVL)		+= nfcmrvl/
-obj-$(CONFIG_NFC_PN512) 	+= pn512/
+# obj-$(CONFIG_NFC_PN512) 	+= pn512/
+obj-$(CONFIG_NFC_PN532)		+= pn532_spi.o
 
 ccflags-$(CONFIG_NFC_DEBUG) := -DDEBUG

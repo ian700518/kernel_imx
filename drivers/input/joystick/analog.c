@@ -504,6 +504,7 @@ static int analog_init_device(struct analog_port *port, struct analog *analog, i
 
 	analog_decode(analog, port->axes, port->initial, port->buttons);
 
+	printk("func_name : %s, line_num : %d\n", __func__, __LINE__);
 	error = input_register_device(analog->dev);
 	if (error) {
 		input_free_device(analog->dev);

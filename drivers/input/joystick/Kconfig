@@ -329,4 +329,24 @@ config JOYSTICK_MAPLE
 	  To compile this as a module choose M here: the module will be called
 	  maplecontrol.
 
+config JOYSTICK_PSPJOYSTICK
+	tristate "psp joysticks"
+	help
+	  Say Y here if you have a psp with a digital joystick connected
+	  to it.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called pspjoy.
+
+config JOYSTICK_GPIO
+	tristate "Joysticks connected to GPIOs"
+	depends on GPIOLIB
+	help
+	 Say Y here if you have one or more joysticks connected to your
+	 device directly via GPIOs.
+
+	 To compile this driver as a module, choose M here: the
+	 module will be called gpio_joy.
+
+
 endif

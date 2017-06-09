@@ -56,9 +56,19 @@ config NFC_PORT100
 
 	  If unsure, say N.
 
+config NFC_PN532
+	tristate "NXP PN532 SPI driver"
+	depends on SPI
+	help
+	  NXP PN532 SPI driver.
+	  This driver provides support for NFC NXP PN532 devices.
+
+	  Say Y here to compile support for PN532 devices into the
+	  kernel or say M to compile it as module (pn532).
+
 source "drivers/nfc/pn544/Kconfig"
 source "drivers/nfc/microread/Kconfig"
 source "drivers/nfc/nfcmrvl/Kconfig"
-source "drivers/nfc/pn512/Kconfig"
+# source "drivers/nfc/pn512/Kconfig"
 
 endmenu

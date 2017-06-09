@@ -32,7 +32,7 @@
 #include <linux/power/sabresd_battery.h>
 #include <linux/slab.h>
 
-#define	BATTERY_UPDATE_INTERVAL	30  /*seconds*/
+#define	BATTERY_UPDATE_INTERVAL	15  /*seconds*/
 #define LOW_VOLT_THRESHOLD	2800000
 #define HIGH_VOLT_THRESHOLD	4200000
 #define ADC_SAMPLE_COUNT	20
@@ -173,7 +173,6 @@ u32 calibrate_battery_capability_percent(struct max8903_data *data)
 	
 	for (i = 0; i < tableSize; i++) {
 		if (data->voltage_uV >= pTable[i].voltage) {
-			//printk("voltage_uv is : %d\n Table_voltage is : %d\n", data->voltage_uV, pTable[i].voltage);
 			return	pTable[i].percent;
 		}
 	}
@@ -196,8 +195,7 @@ static enum power_supply_property max8903_battery_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 };
 
-//extern u32 max11801_read_adc(void);
-extern u32 max1307_read_adc(int channel);
+extern u32 max1307_read_adc(unsigned int channel);
 
 static void max8903_charger_update_status(struct max8903_data *data)
 {
@@ -244,15 +242,14 @@ u32 calibration_voltage(struct max8903_data *data)
 	/* simple average */
 	for (i = 0; i < ADC_SAMPLE_COUNT; i++)
 	{
-		//voltage_data += max11801_read_adc()-offset;
-		voltage_data += max1307_read_adc(2) + offset;
-		//mdelay(100);
+		voltage_data += max1307_read_adc(2);
 	} 
 	voltage_data = voltage_data / ADC_SAMPLE_COUNT;
+	voltage_data = ((voltage_data * 3300) * 2 / 255) + offset;
 	dev_dbg(data->dev, "volt: %d\n", voltage_data);
 
-	printk("at calibration_voltage offset is : %d\n", offset);
-	printk("at calibration_voltage voltage_data is : %d\n", voltage_data);
+	//printk("at calibration_voltage offset is : %d\n", offset);
+	//printk("at calibration_voltage voltage_data is : %d\n", voltage_data);
 	return voltage_data;
 }
 
@@ -432,7 +429,7 @@ static irqreturn_t max8903_usbin(int irq, void *_data)
 
 	return IRQ_HANDLED;
 }
-
+/*
 static irqreturn_t max8903_fault(int irq, void *_data)
 {
 	struct max8903_data *data = _data;
@@ -456,7 +453,7 @@ static irqreturn_t max8903_fault(int irq, void *_data)
 
 	return IRQ_HANDLED;
 }
-
+*/
 static irqreturn_t max8903_chg(int irq, void *_data)
 {
 	struct max8903_data *data = _data;
@@ -636,11 +633,13 @@ static struct max8903_pdata *max8903_of_populate_pdata(
 		dev_err(dev, "pin pdata->chg: invalid gpio %d\n", pdata->chg);
 		return NULL;
 	}
+/*
 	pdata->flt = of_get_named_gpio(of_node, "flt_input", 0);
 	if (!gpio_is_valid(pdata->flt)) {
 		dev_err(dev, "pin pdata->flt: invalid gpio %d\n", pdata->flt);
 		return NULL;
 	}
+*/
 	/* no need check offset without adc converter */
 	if (!pdata->feature_flag) {
 		if (of_property_read_u32(of_node, "offset-charger",
@@ -736,7 +735,7 @@ static int max8903_probe(struct platform_device *pdev)
 			goto err;
 		}
 	}
-
+/*
 	if (pdata->flt) {
 		ret = gpio_request_one(pdata->flt, GPIOF_IN, "max8903-FLT");
 		if (ret) {
@@ -744,7 +743,7 @@ static int max8903_probe(struct platform_device *pdev)
 			goto err;
 		}
 	}
-
+*/
 	data->fault = false;
 	data->ta_in = ta_in;
 	data->usb_in = usb_in;
@@ -809,6 +808,7 @@ static int max8903_probe(struct platform_device *pdev)
 		}
 	}
 
+/*
 	if (pdata->flt) {
 		ret = request_threaded_irq(gpio_to_irq(pdata->flt), NULL,
 			max8903_fault, IRQF_TRIGGER_FALLING |
@@ -820,6 +820,7 @@ static int max8903_probe(struct platform_device *pdev)
 			goto err_flt_irq;
 		}
 	}
+*/
 
 	if (pdata->chg) {
 		ret = request_threaded_irq(gpio_to_irq(pdata->chg), NULL,
@@ -828,7 +829,7 @@ static int max8903_probe(struct platform_device *pdev)
 			data);
 		if (ret) {
 			dev_err(dev, "Cannot request irq %d for Status (%d)\n",
-					gpio_to_irq(pdata->flt), ret);
+					gpio_to_irq(pdata->chg), ret);
 			goto err_chg_irq;
 		}
 	}
@@ -861,10 +862,12 @@ err_dc_irq:
 	if (pdata->dc_valid)
 		free_irq(gpio_to_irq(pdata->dok), data);
 	cancel_delayed_work(&data->work);
+/*
 err_flt_irq:
 	if (pdata->usb_valid)
 		free_irq(gpio_to_irq(pdata->uok), data);
 	cancel_delayed_work(&data->work);
+*/
 err_chg_irq:
 	if (pdata->dc_valid)
 		free_irq(gpio_to_irq(pdata->dok), data);
@@ -874,8 +877,10 @@ err:
 		gpio_free(pdata->uok);
 	if (pdata->dok)
 		gpio_free(pdata->dok);
+/*
 	if (pdata->flt)
 		gpio_free(pdata->flt);
+*/
 	if (pdata->chg)
 		gpio_free(pdata->chg);
 	return ret;
@@ -891,11 +896,12 @@ static int max8903_remove(struct platform_device *pdev)
 		power_supply_unregister(&data->psy);
 		power_supply_unregister(&data->usb);
 		power_supply_unregister(&data->bat);
-
+/*
 		if (pdata->flt) {
 			free_irq(gpio_to_irq(pdata->flt), data);
 			gpio_free(pdata->flt);
 		}
+*/
 		if (pdata->usb_valid && pdata->uok) {
 			free_irq(gpio_to_irq(pdata->uok), data);
 			gpio_free(pdata->uok);

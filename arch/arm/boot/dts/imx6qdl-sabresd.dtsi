@@ -26,7 +26,7 @@
 		dok_input = <>;
 		uok_input = <&gpio6 14 0>;
 		chg_input = <&gpio6 15 0>;
-		flt_input = <&gpio6 16 0>;
+		//flt_input = <>;
 		fsl,usb_valid;
 		status = "okay";
 	};
@@ -178,84 +178,102 @@
 			gpio-key;
 			linux,code = <KEY_VOLUMEDOWN>;
 		};
-		/*以下是新增的A B C D和YES/NO 按键*/
-		key-a {
-			label = "Keya Button";
+
+		Button_A {
+			label = "Button_A";
 			gpios = <&gpio5 25 1>;
 			gpio-key;
 			linux,code = <KEY_J>;   /*A-->J*/
 		};
 
-		key-b {
-			label = "Keyb Button";
+		Button_B {
+			label = "Button_B";
 			gpios = <&gpio5 24 1>;
 			gpio-key;
 			linux,code = <KEY_SPACE>;   /*空格*/
 		};
 
-		key-c {							
-			label = "Keyc Button";	
+		Button_C {							
+			label = "Button_C";	
 			gpios = <&gpio5 23 1>;	
 			gpio-key;				
 			linux,code = <KEY_ESC>;   /*ESC*/
 		};							
 
-		key-d {
-			label = "Keyd Button";
+		Button_D {
+			label = "Button_D";
 			gpios = <&gpio5 22 1>;
 			gpio-key;
 			linux,code = <KEY_K>;   /*D-->K*/
 		};
 
-		
-
-		yes {   
-			label = "Yes Button";
+		Button_Yes {   
+			label = "Button_Yes";
 			gpios = <&gpio5 19 1>;
 			gpio-key;
-			linux,code = <BTN_Y>;//*0X134*//
+			//linux,code = <BTN_Y>;//*0X134*//
+			linux,code = <KEY_SELECT>;  /*0X161*/
 		};
 
-		no {
-			label = "No Button";
+		Button_No {
+			label = "Button_No";
 			gpios = <&gpio5 18 1>;
 			gpio-key;
 			linux,code =<KEY_Z>;//*0X102*//
 		};
+
 		/*五向键*/
-		joystick_up {
+		Button_Up {
 			label = "Up Button";
 			gpios = <&gpio1 23 1>;
 			gpio-key;
 			linux,code = <KEY_UP>;
 		};
 
-		joystick_down {
+		Button_Down {
 			label = "Down Button";
 			gpios = <&gpio1 25 1>;
 			gpio-key;
 			linux,code = <KEY_DOWN>;
 		};
-		joystick_left {
+
+		Button_Left {
 			label = "Left Button";
 			gpios = <&gpio1 31 1>;
 			gpio-key;
 			linux,code = <KEY_LEFT>;
 		};
 
-		joystick_right {
+		Button_Right {
 			label = "Right Button";
 			gpios = <&gpio1 22 1>;
 			gpio-key;
 			linux,code = <KEY_RIGHT>;
 		};
 			
-		joystick_center {
+		Button_Center {
 			label = "Center Button";
 			gpios = <&gpio1 28 1>;
 			gpio-key;
 			linux,code = <KEY_SELECT>;  /*0X161*/
 		};
+	};
+
+	joystick {
+		compatible = "gpio-joy";
+		pinctrl-names = "default";
+		debounce-interval-ms = <1>;
+		debounce-range = <3>;
+		up-linux,code = <KEY_UP>;
+		down-linux,code = <KEY_DOWN>;
+		left-linux,code = <KEY_LEFT>;
+		right-linux,code = <KEY_RIGHT>;
+		detect-max = <192>;
+		detect-min = <64>;
+		detect-up = <25>;
+		detect-down = <230>;
+		detect-left = <25>;
+		detect-right = <230>;
 	};
 
 /*	gps {												*/
@@ -542,7 +560,7 @@
 	status = "okay";
 
 	nfc: pn512@0 {				
-		compatible = "pn512";
+		compatible = "nxp,pn532_spi";
 		spi-max-frequency = <10000000>;
 		reg = <0>;
 	};
@@ -1066,8 +1084,6 @@
 				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31	0x80000000
  			>;
  		};
-
-
 	};
 };
 

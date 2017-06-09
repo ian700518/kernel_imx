@@ -1,0 +1,848 @@
+iso14443_typeA.c~:18:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c~:23:    if (picc->states != PICC_POWEROFF)
+iso14443_typeA.c~:38:        picc->states = PICC_IDLE;
+iso14443_typeA.c~:56:    struct pn512_request	*req = picc->request;
+iso14443_typeA.c~:154:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c~:180:    picc->SAK = 0;
+iso14443_typeA.c~:190:			picc->SAK = req->buf[0];
+iso14443_typeA.c~:192:			INFO_TO("sak: %02X\n", picc->SAK);
+iso14443_typeA.c~:206:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c~:228:        picc->ATQA[0] = 0x00;
+iso14443_typeA.c~:229:        picc->ATQA[1] = 0x00;
+iso14443_typeA.c~:239:            picc->ATQA[0] = 0x00;
+iso14443_typeA.c~:240:            picc->ATQA[1] = 0x00;
+iso14443_typeA.c~:245:			picc->ATQA[0] = req->buf[0];
+iso14443_typeA.c~:246:			picc->ATQA[1] = req->buf[1];
+iso14443_typeA.c~:248:            picc->states = PICC_READY;
+iso14443_typeA.c~:250:			INFO_TO("ATQA: %02X %02X\n", picc->ATQA[0], picc->ATQA[1]);
+iso14443_typeA.c~:307:                memcpy(picc->sn, cardUID+1, 3);
+iso14443_typeA.c~:308:                picc->sn_len = 3;
+iso14443_typeA.c~:312:                memcpy(picc->sn, cardUID, 4);
+iso14443_typeA.c~:313:                picc->sn_len = 4;
+iso14443_typeA.c~:322:                memcpy(picc->sn + 3, cardUID+1,3);
+iso14443_typeA.c~:323:                picc->sn_len = 6;
+iso14443_typeA.c~:327:                memcpy(picc->sn + 3, cardUID, 4);
+iso14443_typeA.c~:328:                picc->sn_len = 7;
+iso14443_typeA.c~:335:            memcpy(picc->sn+6, cardUID, 4);
+iso14443_typeA.c~:336:            picc->sn_len = 10;
+iso14443_typeA.c~:346:        for(level = 0; level < picc->sn_len; level++)
+iso14443_typeA.c~:348:            INFO_TO(" %02X\n", picc->sn[level]);
+iso14443_typeA.c~:376:    	sak = picc->SAK & 0x24;
+iso14443_typeA.c~:383:            picc->CID = get_cid(picc->sn);
+iso14443_typeA.c~:384:            if((BITISSET(picc->pcd->flags_polling, AUTO_RATS)))
+iso14443_typeA.c~:390:                    picc->type = PICC_TYPEA_TCL;        // typeaA PICC which compliant to ISO/IEC 14443-4 
+iso14443_typeA.c~:391:                    picc->name = "standard typeA";
+iso14443_typeA.c~:393:                    picc->FSC = FSCConvertTbl[picc->FSCI] - 3;      // FSC excluding EDC and PCB, refer to Figure14 --- Block format
+iso14443_typeA.c~:394:                    if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14443_typeA.c~:396:                        picc->FSC--;                              // FSC excluding CID, refer to Figure14 --- Block format
+iso14443_typeA.c~:406:                    picc->type = PICC_ABSENT;
+iso14443_typeA.c~:407:					picc->name = "none";
+iso14443_typeA.c~:413://            picc->type = PICC_MIFARE;
+iso14443_typeA.c~:420:        picc->type = PICC_ABSENT;
+iso14443_typeA.c~:421:		picc->name = "none";
+iso14444.c:87:	struct pn512_request	*req = picc->request;
+iso14444.c:97:		req->buf[1] = picc->pcd->FSDI << 4 | picc->CID;
+iso14444.c:106:        picc->ATS[0] = req->buf[0];
+iso14444.c:117:			if(req->actual != picc->ATS[0])
+iso14444.c:123:            picc->states = PICC_ACTIVATED;
+iso14444.c:125:            CLEAR_BIT(picc->flags_TCL, PCD_BLOCK_NUMBER);    // reset block number
+iso14444.c:126:            SET_BIT(picc->flags_TCL, CID_PRESENT);          // CID supported by PICC by default
+iso14444.c:134:				memcpy(&picc->ATS[1], &req->buf[1], req->actual-1);
+iso14444.c:136:                picc->FSCI = picc->ATS[1] & 0x0F;    // T0: format byte, codes Y(1) and FSCI
+iso14444.c:137:                if(picc->FSCI > 8)
+iso14444.c:139:                    picc->FSCI = 8;
+iso14444.c:143:                if(picc->ATS[1] & 0x10)
+iso14444.c:147:                    picc->speed = picc->ATS[i];
+iso14444.c:148:                    if(picc->speed & 0x08)
+iso14444.c:151:                        picc->speed = 0x00;    // complaint to ISO14443-4: 2008
+iso14444.c:154:                if(picc->ATS[1] & 0x20)
+iso14444.c:158:                    picc->FWI = (picc->ATS[i] & 0xF0) >> 4;   // Set FWT
+iso14444.c:159:                    if(picc->FWI > 14) 
+iso14444.c:162:                        picc->FWI = 4;    // complaint to ISO14443-4: 2008
+iso14444.c:164:                    picc->SFGI = picc->ATS[i] & 0x0F;
+iso14444.c:165:                    if(picc->SFGI > 14) 
+iso14444.c:168:                        picc->SFGI = 0;    // complaint to ISO14443-4: 2008
+iso14444.c:171:                if(picc->ATS[1] & 0x40)
+iso14444.c:175:                    if((picc->ATS[i] & 0x02) == 0x00)
+iso14444.c:178:                        CLEAR_BIT(picc->flags_TCL, CID_PRESENT);
+iso14444.c:260:    u8  tempWTXM = picc->WTXM;
+iso14444.c:266:    if(picc->type == PICC_TYPEB_TCL)
+iso14444.c:269:        if(BITISSET(picc->flags_TCL, TYPEB_ATTRIB))
+iso14444.c:278:    if(BITISSET(picc->flags_TCL, WTX_REQUEST))
+iso14444.c:296:        CLEAR_BIT(picc->flags_TCL, WTX_REQUEST);
+iso14444.c:312:    picc->pcd->current_speed = 0x80;
+iso14444.c:315:    if(picc->speed & 0x01)
+iso14444.c:320:    if(picc->speed & 0x02)
+iso14444.c:325:    if(picc->speed & 0x04)
+iso14444.c:333:    if(picc->speed & 0x10)
+iso14444.c:338:    if(picc->speed & 0x20)
+iso14444.c:343:    if(picc->speed & 0x40)
+iso14444.c:350:    if(picc->speed & 0x80)    
+iso14444.c:363:    if(picc->speed & 0x08)
+iso14444.c:376:    picc->pcd->current_speed = picc->speed & 0x80;
+iso14444.c:380:        picc->pcd->current_speed |= 0x03;
+iso14444.c:386:        picc->pcd->current_speed |= 0x02;
+iso14444.c:392:        picc->pcd->current_speed |= 0x01;
+iso14444.c:398:        picc->pcd->current_speed |= 0x18;
+iso14444.c:404:        picc->pcd->current_speed |= 0x10;
+iso14444.c:411:        picc->pcd->current_speed |= 0x08;
+iso14444.c:419:    if((picc->pcd->PCB & 0xC0) != 0xC0)
+iso14444.c:422:        if(BITISSET(picc->flags_TCL, PCD_BLOCK_NUMBER))
+iso14444.c:424:            picc->pcd->PCB |= 0x01;
+iso14444.c:428:            picc->pcd->PCB &= 0xFE;
+iso14444.c:431:    if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:433:        picc->pcd->PCB |= 0x08;
+iso14444.c:437:        picc->pcd->PCB &= 0xF7;
+iso14444.c:451:	struct pn512_request	*req = picc->request;
+iso14444.c:458:		req->buf[0] = 0xD0 | picc->CID;
+iso14444.c:461:		typeA_sfg_delay(picc->SFGI);
+iso14444.c:468:		typeA_set_timeout(picc, picc->FWI);
+iso14444.c:490:	struct pn512_request	*req = picc->request;
+iso14444.c:495:    picc->pcd->PCB = blockPCB;
+iso14444.c:497:    tempFWI = picc->FWI;
+iso14444.c:500:	req->buf[0] = picc->pcd->PCB;
+iso14444.c:501:	if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:503:		req->buf[1] = picc->CID;
+iso14444.c:527:	struct pn512_request	*req = picc->request;
+iso14444.c:531:    if(picc->states == PICC_ACTIVATED)
+iso14444.c:533:        picc->pcd->PCB = 0xC2;    // S-block, DESELECT
+iso14444.c:536:		req->buf[0] = picc->pcd->PCB;
+iso14444.c:537:		if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:539:			req->buf[1] = picc->CID;
+iso14444.c:553:        if(picc->states != PICC_POWEROFF)
+iso14444.c:555:            picc->states = PICC_IDLE;
+iso14444.c:557:        if(picc->type == PICC_TYPEA_TCL)
+iso14444.c:562:        else if(picc->type == PICC_TYPEB_TCL)
+iso14444.c:576:	struct pn512_request	*req = picc->request;
+iso14444.c:579:    picc->pcd->PCB = blockPCB;
+iso14444.c:582:	req->buf[0] = picc->pcd->PCB;
+iso14444.c:583:	if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:585:		req->buf[1] = picc->CID;
+iso14444.c:595:	typeA_set_timeout(picc, picc->FWI);
+iso14444.c:615:	struct pn512_request	*req = picc->request;
+iso14444.c:623:        picc->pcd->PCB = picc->PCB;
+iso14444.c:624:        typeA_sfg_delay(picc->SFGI);
+iso14444.c:627:		req->buf[0] = picc->pcd->PCB;
+iso14444.c:628:		if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:630:			req->buf[1] = picc->CID;
+iso14444.c:643:		typeA_set_timeout(picc, picc->FWI);
+iso14444.c:653:                CLEAR_BIT(picc->flags_TCL, WTX_REQ_BEFORE);
+iso14444.c:654:                if(BITISSET(picc->flags_TCL, PICC_CHAINING))
+iso14444.c:678:                CLEAR_BIT(picc->flags_TCL, WTX_REQ_BEFORE);
+iso14444.c:688:                            if(BITISCLEAR(picc->flags_TCL, CID_PRESENT))
+iso14444.c:700:                        if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:702:                            picc->WTXM = recBuf[2];
+iso14444.c:707:                            picc->WTXM = recBuf[1];
+iso14444.c:709:                        if((picc->WTXM == 0) || (picc->WTXM > 59)) 
+iso14444.c:715:                        picc->pcd->PCB = 0xF2;
+iso14444.c:716:                        typeA_sfg_delay(picc->SFGI);
+iso14444.c:719:						req->buf[0] = picc->pcd->PCB;
+iso14444.c:720:						if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:722:							req->buf[1] = picc->CID;
+iso14444.c:723:							req->buf[2] = picc->WTXM;
+iso14444.c:728:							req->buf[1] = picc->WTXM;
+iso14444.c:736:						typeA_set_timeout(picc, picc->FWI);
+iso14444.c:741:                        SET_BIT(picc->flags_TCL, WTX_REQUEST);    // the time FWTtemp starts after the PCD has sent the S(WTX) response
+iso14444.c:742:                        SET_BIT(picc->flags_TCL, WTX_REQ_BEFORE);
+iso14444.c:765:                        if(BITISCLEAR(picc->flags_TCL, CID_PRESENT))
+iso14444.c:772:                    if((picc->PCB ^ recBuf[0]) & 0x01)
+iso14444.c:782:                        picc->PCB &= 0x1F;
+iso14444.c:794:                        if(BITISSET(picc->flags_TCL, PCD_CHAINING))
+iso14444.c:797:                            TOGGLE_BIT(picc->flags_TCL, PCD_BLOCK_NUMBER);
+iso14444.c:813:                        if(BITISCLEAR(picc->flags_TCL, CID_PRESENT))
+iso14444.c:832:                    if(BITISSET(picc->flags_TCL, PCD_CHAINING))
+iso14444.c:839:                        if((picc->PCB ^ recBuf[0]) & 0x01) //Block number error
+iso14444.c:845:                        TOGGLE_BIT(picc->flags_TCL, PCD_BLOCK_NUMBER);
+iso14444.c:849:                            SET_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:853:                            CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:866:                if(BITISSET(picc->flags_TCL, WTX_REQ_BEFORE))
+iso14444.c:868:                    SET_BIT(picc->flags_TCL, WTX_REQUEST);
+iso14444.c:869:                    CLEAR_BIT(picc->flags_TCL, WTX_REQ_BEFORE);
+iso14444.c:871:                if(BITISSET(picc->flags_TCL, PICC_CHAINING))
+iso14444.c:878:                    typeA_sfg_delay(picc->SFGI);
+iso14444.c:889:                    typeA_sfg_delay(picc->SFGI);
+iso14444.c:896:                CLEAR_BIT(picc->flags_TCL, WTX_REQ_BEFORE);
+iso14444.c:956:        CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:957:        if((senLen <= picc->FSC) && ((*level == 0x02) || (*level == 0x00)))
+iso14444.c:959:            CLEAR_BIT(picc->flags_TCL, PCD_CHAINING);
+iso14444.c:960:            picc->PCB = 0x02;            // I-block, no chaining
+iso14444.c:961:            if(BITISSET(picc->flags_TCL, PCD_BLOCK_NUMBER))
+iso14444.c:963:                picc->PCB |= 0x01;
+iso14444.c:965:            if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:967:                picc->PCB |= 0x08;
+iso14444.c:976:                if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:1002:                CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:1008:            SET_BIT(picc->flags_TCL, PCD_CHAINING);
+iso14444.c:1009:            picc->PCB = 0x12;
+iso14444.c:1010:            if(BITISSET(picc->flags_TCL, PCD_BLOCK_NUMBER))
+iso14444.c:1012:                picc->PCB |= 0x01;
+iso14444.c:1014:            if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:1016:                picc->PCB |= 0x08;
+iso14444.c:1018:            ret = typeA_data_send_error_check(picc, pSenAddr, picc->FSC, pRecAddr, &tempRecLen);
+iso14444.c:1019:            CLEAR_BIT(picc->flags_TCL, PCD_CHAINING);
+iso14444.c:1023:                senLen   -= picc->FSC;
+iso14444.c:1024:                pSenAddr += picc->FSC;
+iso14444.c:1025:                if(((*level == 0x01) || (*level == 0x03)) && (senLen < picc->FSC))
+iso14444.c:1036:                    CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:1043:                CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:1048:    while(BITISSET(picc->flags_TCL, PICC_CHAINING))
+iso14444.c:1050:        picc->PCB = 0xA2;
+iso14444.c:1051:        if(BITISSET(picc->flags_TCL, PCD_BLOCK_NUMBER))
+iso14444.c:1053:            picc->PCB |= 0x01;
+iso14444.c:1055:        if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:1057:            picc->PCB |= 0x08;
+iso14444.c:1064:            if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14444.c:1095:                picc->pcd->piccPoll  = FALSE;
+iso14444.c:1096:                 picc->pcd->poll_interval = 1000;              // 1000ms, start another poll
+iso14444.c:1102:            CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+iso14444.c:1116:         picc->pcd->piccPoll  = FALSE;
+iso14444.c:1117:         picc->pcd->poll_interval = 1000;    // 1000ms, start another poll
+iso14444.c:1121:         picc->pcd->piccPoll = TRUE;
+iso14444.c:1125:        CLEAR_BIT(picc->flags_TCL, PCD_CHAINING);
+iso14444.c:1126:        CLEAR_BIT(picc->flags_TCL, PICC_CHAINING);
+#pcsc.c#:37:    if((picc->type == PICC_MIFARE) || (picc->type == PICC_FELICA212)
+#pcsc.c#:38:		|| (picc->type == PICC_FELICA424) || (picc->type == PICC_TOPAZ))
+#pcsc.c#:47:        if(picc->type == PICC_FELICA212)
+#pcsc.c#:53:        else if(picc->type == PICC_FELICA424)
+#pcsc.c#:59:        else if(picc->type == PICC_TOPAZ)
+#pcsc.c#:66:            if(picc->SAK == 0x08)
+#pcsc.c#:72:            else if(picc->SAK == 0x18)
+#pcsc.c#:78:            else if(picc->SAK == 0x00)
+#pcsc.c#:84:            else if(picc->SAK == 0x09)
+#pcsc.c#:94:                atrBuf[14] = picc->SAK;
+#pcsc.c#:108:        if(picc->type == PICC_TYPEA_TCL)
+#pcsc.c#:112:            j = picc->ATS[0] - 2;        // Excluding TL and T0
+#pcsc.c#:113:            if(picc->ATS[1] & 0x10)      //TA1
+#pcsc.c#:118:             if(picc->ATS[1] & 0x20)      //TB1
+#pcsc.c#:123:            if(picc->ATS[1] & 0x40)      //TC1
+#pcsc.c#:136:            while(i < picc->ATS[0])
+#pcsc.c#:138:                atrBuf[4 + j] =  picc->ATS[i];
+#pcsc.c#:151:        else if(picc->type == PICC_TYPEB_TCL)
+#pcsc.c#:160:                atrBuf[4+i] = picc->ATQB[5 + i];
+#pcsc.c#:162:            atrBuf[11] = picc->attrib_response[0] & 0xF0;
+#pcsc.c#:193:                picc->pcd->FSDI = paramCmd[2]; 
+#pcsc.c#:199:                paramRes[2] = picc->pcd->FSDI;
+#pcsc.c#:207:                picc->FSCI = paramCmd[2]; 
+#pcsc.c#:213:                paramRes[2] = picc->FSCI;
+#pcsc.c#:221:                picc->FWI = paramCmd[2]; 
+#pcsc.c#:227:                paramRes[2] = picc->FWI;
+#pcsc.c#:235:                picc->pcd->max_speed = paramCmd[2];
+#pcsc.c#:241:                paramRes[2] = picc->pcd->max_speed;
+#pcsc.c#:249:                picc->pcd->current_speed = paramCmd[2];
+#pcsc.c#:255:                paramRes[2] = picc->pcd->current_speed;
+#pcsc.c#:277:                picc->PCB = paramCmd[2];
+#pcsc.c#:283:                paramRes[2] = picc->PCB;
+#pcsc.c#:291:                picc->CID       = paramCmd[2];
+#pcsc.c#:297:                paramRes[2] = picc->CID;
+#pcsc.c#:309:                memcpy(picc->attrib_param, paramCmd + 2, 4);
+#pcsc.c#:315:                memcpy(paramRes + 2, picc->attrib_param, 4);
+#pcsc.c#:337:	struct pn512_request	*req = picc->request;
+#pcsc.c#:343:    pn512_reg_write(BitFramingReg, picc->last_tx_valid_bits & 0x07);   // set TxLastBits to 7 
+#pcsc.c#:345:    if(picc->flags_status)
+#pcsc.c#:347:        if(BITISCLEAR(picc->flags_tx_rx, TXCRC))
+#pcsc.c#:352:        if(BITISCLEAR(picc->flags_tx_rx, RXCRC))
+#pcsc.c#:357:        if(BITISCLEAR(picc->flags_tx_rx, TXPARITY))
+#pcsc.c#:362:        if(BITISCLEAR(picc->flags_tx_rx, PROLOGUE))
+#pcsc.c#:365:			req->buf[req->length++] = picc->pcd->PCB;
+#pcsc.c#:366:			if(BITISSET(picc->flags_TCL, CID_PRESENT))
+#pcsc.c#:367:				req->buf[req->length++] = picc->CID;
+#pcsc.c#:473:    picc->previous_cmd = OJ_Idle;
+#pcsc.c#:496:            picc->previous_cmd = CMD_DO_VERSIONDATA;
+#pcsc.c#:502:                picc->transfer_status     = 0x01;
+#pcsc.c#:503:                picc->flags_status      = 0x00;
+#pcsc.c#:504:                picc->last_rx_valid_bits = 0x00;
+#pcsc.c#:505:                picc->last_tx_valid_bits = 0x00;
+#pcsc.c#:514:            picc->previous_cmd = CMD_DO_STARTTRANS;
+#pcsc.c#:520:                picc->transfer_status = 0x00;
+#pcsc.c#:521:                picc->flags_status  = 0x00;
+#pcsc.c#:530:            picc->previous_cmd = CMD_DO_ENDTRANS;
+#pcsc.c#:536:                if(picc->transfer_status == 0x01)
+#pcsc.c#:554:            picc->previous_cmd = CMD_DO_TURNOFF_RF;
+#pcsc.c#:562:                    picc->next_cmd = OJ_Idle;
+#pcsc.c#:566:                    picc->next_cmd = cmdBuf[i + 7];
+#pcsc.c#:571:                    picc->next_cmd = cmdBuf[i + 7];
+#pcsc.c#:581:                if(picc->next_cmd == CMD_DO_TRANSCEIVE_DATA)
+#pcsc.c#:585:                else if(picc->next_cmd != OJ_Idle)
+#pcsc.c#:602:            picc->previous_cmd = CMD_DO_TIMER;
+#pcsc.c#:608:                if(picc->transfer_status == 0x01)
+#pcsc.c#:626:            picc->previous_cmd = CMD_DO_TURNON_RF;
+#pcsc.c#:659:            picc->previous_cmd = CMD_DO_PARAMETERS;
+#pcsc.c#:705:            picc->previous_cmd = CMD_DO_PARAMETERS;
+#pcsc.c#:710:        else if(((cmdBuf[i] & 0xF0) == 0x90) && (cmdtype == TRANSPARENT_EXCHANGE) && (picc->transfer_status==0x01))
+#pcsc.c#:716:                    picc->flags_tx_rx = MAKEWORD(cmdBuf[i + 3], cmdBuf[i + 2]);
+#pcsc.c#:717:                    picc->flags_status = 0x01;
+#pcsc.c#:726:                picc->previous_cmd = CMD_DO_TRANSCEIVE_FLAG;
+#pcsc.c#:732:                    picc->last_tx_valid_bits = cmdBuf[i + 2];
+#pcsc.c#:741:                picc->previous_cmd = CMD_DO_TRANS_BIT_FRAM;
+#pcsc.c#:747:                    picc->last_rx_valid_bits = cmdBuf[i + 2];
+#pcsc.c#:756:                picc->previous_cmd = CMD_DO_REC_BIT_FRAM;
+#pcsc.c#:774:                picc->previous_cmd = CMD_DO_TRANSMIT;
+#pcsc.c#:790:                        if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:792:                            typeA_set_timeout(picc, picc->FWI);
+#pcsc.c#:817:                picc->previous_cmd = CMD_DO_RECEIVE;
+#pcsc.c#:830:                        if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:832:                            typeA_set_timeout(picc, picc->FWI);
+#pcsc.c#:857:                picc->previous_cmd = CMD_DO_TRANSCEIVE_DATA;
+#pcsc.c#:863:        else if((cmdBuf[i] == CMD_DO_SWITCH_PROTOCOL) && (picc->transfer_status == 0x01))
+#pcsc.c#:881:                            if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:885:                            else if(picc->states == PICC_POWEROFF)
+#pcsc.c#:900:                                resBuf[j++] = picc->SAK;
+#pcsc.c#:909:                            if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:913:                            else if(picc->states == PICC_POWEROFF)
+#pcsc.c#:923:                            if(picc->type != PICC_ABSENT)
+#pcsc.c#:955:                            if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:959:                            else if(picc->states == PICC_POWEROFF)
+#pcsc.c#:978:                                resBuf[j++] = picc->ATQB[9];
+#pcsc.c#:979:                                resBuf[j++] = picc->ATQB[10];
+#pcsc.c#:980:                                resBuf[j++] = picc->ATQB[11];
+#pcsc.c#:990:                            if(picc->states == PICC_ACTIVATED)
+#pcsc.c#:994:                            else if(picc->states == PICC_POWEROFF)
+#pcsc.c#:1004:                            if(picc->type != PICC_ABSENT)
+topaz.c:120:	struct pn512_request	*req = picc->request;
+topaz.c:216:        picc->sn_len = 4;
+topaz.c:217:        memcpy(picc->sn, tempBuf + 2, 4);
+topaz.c:243:        picc->type = PICC_ABSENT;
+topaz.c:244:		picc->name = "none";
+topaz.c:250:            picc->type = PICC_TOPAZ;
+topaz.c:251:			picc->name = "topaz";
+topaz.c:278:        memcpy(cmdBuf + 3, picc->sn, 4);
+topaz.c:284:        memcpy(cmdBuf + 3, picc->sn, 4);
+topaz.c:289:        memcpy(cmdBuf + 3, picc->sn, 4);
+topaz.c:294:        memcpy(cmdBuf + 3, picc->sn, 4);
+mifare.c:33:        tempUIDLength = picc->sn_len;
+mifare.c:39:                memcpy(tempUID, picc->sn + i, 4);
+mifare.c:45:                memcpy(tempUID + 1, picc->sn + i, 3);
+mifare.c:56:        picc->authen_need = 0x01;
+mifare.c:57:        picc->states = PICC_SELECTED;
+mifare.c:69:	struct pn512_request	*req = picc->request;
+mifare.c:73:	req->buf[0] = picc->key_type;
+mifare.c:74:	req->buf[1] = picc->block;
+mifare.c:76:    if(picc->sn_len == 7)
+mifare.c:77:    	memcpy(req->buf+8, &picc->sn[3], 4);
+mifare.c:79:    	memcpy(req->buf+8, picc->sn, 4);
+mifare.c:109:    if((picc->SAK & 0xDF) == SAK_MIFARE_4K)
+mifare.c:126:    else if(((picc->SAK & 0xDF) == SAK_MIFARE_1K) || ((picc->SAK & 0xDF) == SAK_MIFARE_MINI))
+mifare.c:154:    if(((picc->key_valid & 0x01) && (picc->key_No == 0x00))
+mifare.c:155:        || ((picc->key_valid & 0x02) && (picc->key_No == 0x01)))
+mifare.c:157:        ret = mifare_authen_analyze(picc, (u8*)picc->work_key);
+mifare.c:160:            picc->authen_need = 0x00;
+mifare.c:164:            picc->authen_need = 0x01;
+mifare.c:170:        picc->authen_need = 0x01;
+mifare.c:203:    if(picc->block >= 0x80)         //For Mifare 4K large block
+mifare.c:207:        if((i != (u8)(picc->block / 16)) || (j != (u8)(picc->block / 16)))
+mifare.c:216:        if((i!=(u8)(picc->block / 4)) || (j!=(u8)(picc->block / 4)))
+mifare.c:230:    struct pn512_request	*req = picc->request;
+mifare.c:274:	struct pn512_request	*req = picc->request;
+mifare.c:382:	struct pn512_request	*req = picc->request;
+mifare.c:485:                picc->pcd->mifare_key[senBuf[3]][i] = senBuf[5 + i];
+mifare.c:505:        if(picc->states != PICC_SELECTED)
+mifare.c:511:            picc->block   = senBuf[7];
+mifare.c:512:            picc->key_type = senBuf[8];
+mifare.c:513:            picc->key_No   = senBuf[9];
+mifare.c:514:            ret = mifare_authen_analyze(picc, picc->pcd->mifare_key[picc->key_No]);
+mifare.c:517:                if(picc->key_No == 0x00) 
+mifare.c:519:                    picc->key_valid |= 0x01;
+mifare.c:523:                    picc->key_valid |= 0x02;
+mifare.c:527:                    picc->work_key[i] = picc->pcd->mifare_key[picc->key_No][i];
+mifare.c:536:                if(picc->key_No == 0x00)
+mifare.c:538:                    picc->key_valid &= 0xFE;
+mifare.c:542:                    picc->key_valid &= 0xFD;
+mifare.c:555:        if(picc->states != PICC_SELECTED)
+mifare.c:561:            picc->block   = senBuf[3];
+mifare.c:562:            picc->key_type = senBuf[4];
+mifare.c:563:            picc->key_No   = senBuf[5];
+mifare.c:564:            ret = mifare_authen_analyze(picc, picc->pcd->mifare_key[picc->key_No]);
+mifare.c:567:                if(picc->key_No == 0x00) 
+mifare.c:569:                    picc->key_valid |= 0x01;
+mifare.c:573:                    picc->key_valid |= 0x02;
+mifare.c:577:                    picc->work_key[i] = picc->pcd->mifare_key[picc->key_No][i];
+mifare.c:586:                if(picc->key_No == 0x00)
+mifare.c:588:                    picc->key_valid &= 0xFE;
+mifare.c:592:                    picc->key_valid &= 0xFD;
+mifare.c:610:            if((picc->authen_need == 0x01) && (picc->SAK != SAK_MIFARE_ULTRALIGHT))
+mifare.c:630:                if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:651:                if(picc->SAK == SAK_MIFARE_ULTRALIGHT)
+mifare.c:671:            if((picc->authen_need == 0x01) && (picc->SAK != SAK_MIFARE_ULTRALIGHT))
+mifare.c:690:                if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:727:            if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:731:                    picc->pcd->piccPoll = TRUE;
+mifare.c:735:                    picc->pcd->piccPoll = TRUE;
+mifare.c:745:        if((picc->authen_need == 0x01) && (picc->SAK != SAK_MIFARE_ULTRALIGHT))
+mifare.c:749:        if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:791:        if((picc->authen_need == 0x01) && (picc->SAK != SAK_MIFARE_ULTRALIGHT))
+mifare.c:833:        if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:873:        if((picc->authen_need == 0x01) && (picc->SAK != SAK_MIFARE_ULTRALIGHT))
+mifare.c:881:        if(picc->SAK != SAK_MIFARE_ULTRALIGHT)
+mifare.c:914:        picc->pcd->poll_interval = 1000;                 // 1000ms, start another poll
+mifare.c:915:        picc->pcd->piccPoll = FALSE;
+mifare.c:923:        picc->pcd->piccPoll = TRUE;
+mifare.c:931:        picc->pcd->piccPoll = TRUE;
+mifare.c:941:	picc->type = PICC_MIFARE;
+mifare.c:942:	switch(picc->SAK)
+mifare.c:945:			picc->name = "mifare ultralight (C) CL2";
+mifare.c:949:			picc->name = "mifare mini(0.3k)";
+mifare.c:953:			picc->name = "mifare classic 1K";
+mifare.c:957:			picc->name = "mifare classic 4K";
+mifare.c:961:			picc->name = "mifare desfire";
+mifare.c:965:			picc->name = "unkonw tag";
+iso14443_typeB.c~:17: 	struct pn512_request	*req = picc->request;
+iso14443_typeB.c~:43:			memcpy(&picc->ATQB, req->buf, req->actual);
+iso14443_typeB.c~:45:			picc->ATQB_len = req->actual;
+iso14443_typeB.c~:46:            if(picc->ATQB[0] != 0x50)
+iso14443_typeB.c~:52:                picc->states = PICC_READY;
+iso14443_typeB.c~:70: 	struct pn512_request	*req = picc->request;
+iso14443_typeB.c~:99:				memcpy(&picc->ATQB, req->buf, req->actual);
+iso14443_typeB.c~:100:				picc->ATQB_len = req->actual;
+iso14443_typeB.c~:101:                if(picc->ATQB[0] != 0x50)
+iso14443_typeB.c~:107:                    picc->states = PICC_READY;
+iso14443_typeB.c~:110:							picc->ATQB[1], picc->ATQB[2], picc->ATQB[3], picc->ATQB[4]);
+iso14443_typeB.c~:127:    CLEAR_BIT(picc->flags_TCL, PCD_BLOCK_NUMBER);
+iso14443_typeB.c~:129:    memcpy(picc->sn, ATQB+1, 4);            // copy PUPI
+iso14443_typeB.c~:130:    picc->sn_len = 4;
+iso14443_typeB.c~:132:    picc->speed = ATQB[9];
+iso14443_typeB.c~:134:    picc->FSCI = ATQB[10] >> 4;
+iso14443_typeB.c~:135:    if(picc->FSCI > 8)
+iso14443_typeB.c~:137:        picc->FSCI = 8;
+iso14443_typeB.c~:143:        SET_BIT(picc->flags_TCL, CID_PRESENT);
+iso14443_typeB.c~:144:        picc->CID = get_cid(picc->sn);
+iso14443_typeB.c~:148:        CLEAR_BIT(picc->flags_TCL, CID_PRESENT);
+iso14443_typeB.c~:149:        picc->CID = 0;
+iso14443_typeB.c~:152:    picc->FWI = ATQB[11] >> 4;
+iso14443_typeB.c~:153:    if(picc->FWI > 14)
+iso14443_typeB.c~:155:        picc->FWI = 4;          // compliant to ISO14443-3:2011
+iso14443_typeB.c~:160:        picc->support_part4 = 0x01;        // PICC compliant with ISO/IEC 14443-4
+iso14443_typeB.c~:164:        picc->support_part4 = 0x00;        // PICC not compliant with ISO/IEC 14443-4
+iso14443_typeB.c~:170:        picc->SFGI = 0;    // 10etu + 32 / fs
+iso14443_typeB.c~:174:        picc->SFGI = 1;    // 10etu + 128 / fs
+iso14443_typeB.c~:178:        picc->SFGI = 1;   // 10etu + 256 / fs
+iso14443_typeB.c~:182:        picc->SFGI = 2;    // 10etu + 512 / fs    
+iso14443_typeB.c~:185:    if(picc->ATQB_len == 13)
+iso14443_typeB.c~:189:        picc->SFGI = ATQB[12] >> 4;
+iso14443_typeB.c~:190:        if(picc->SFGI > 14)
+iso14443_typeB.c~:192:            picc->SFGI = 0;
+iso14443_typeB.c~:200:	struct pn512_request	*req = picc->request;
+iso14443_typeB.c~:209:	memcpy(req->buf+1, picc->sn, 4);
+iso14443_typeB.c~:210:	memcpy(req->buf+5, picc->attrib_param, 4);
+iso14443_typeB.c~:217:	SET_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c~:219:	typeA_set_timeout(picc, picc->FWI);
+iso14443_typeB.c~:223:    CLEAR_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c~:227:	memcpy(picc->attrib_response, req->buf, req->actual);
+iso14443_typeB.c~:229:    if((picc->attrib_response[0] & 0x0F) != picc->CID)
+iso14443_typeB.c~:252:    typeB_ATQB_analysis(picc, picc->ATQB);
+iso14443_typeB.c~:256:    picc->attrib_param[0] = 0x00;                                // param 1:  TR0 = 64 /fs, TR1 = 80 / fs, SOF required, EOF required
+iso14443_typeB.c~:257:    picc->attrib_param[1] = (speedParam << 4) | picc->pcd->FSDI;    // param 2: 
+iso14443_typeB.c~:258:    picc->attrib_param[2] = picc->support_part4;                         // param 3:
+iso14443_typeB.c~:259:    picc->attrib_param[3] = picc->pcd->CID & 0x0f;                  // param 4:
+iso14443_typeB.c~:264:        picc->states = PICC_ACTIVATED;
+iso14443_typeB.c~:275:	struct pn512_request	*req = picc->request;
+iso14443_typeB.c~:280:    if (picc->states != PICC_POWEROFF)
+iso14443_typeB.c~:288:		memcpy(&req->buf[1], picc->sn, 4);
+iso14443_typeB.c~:295:		SET_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c~:297:		typeA_set_timeout(picc, picc->FWI);
+iso14443_typeB.c~:306:            picc->states= PICC_IDLE;
+iso14443_typeB.c~:337:            picc->type = PICC_ABSENT;
+iso14443_typeB.c~:338:			picc->name = "none";
+iso14443_typeB.c~:363:            picc->type = PICC_TYPEB_TCL;
+iso14443_typeB.c~:364:			picc->name = "standard typeB";
+iso14443_typeB.c~:365:            picc->FSC = FSCConvertTbl[picc->FSCI] - 3;    // FSC excluding EDC and PCB
+iso14443_typeB.c~:366:            if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14443_typeB.c~:368:                picc->FSC--;        // FSC excluding CID
+iso14443_typeB.c~:377:            picc->type = PICC_ABSENT;
+iso14443_typeB.c~:378:			picc->name = "none";
+iso14443_typeB.c~:383:        picc->type = PICC_ABSENT;
+iso14443_typeB.c~:384:		picc->name = "none";
+picc.c~:100:    picc->states = PICC_IDLE;
+picc.c~:108:    if(BITISCLEAR(picc->status, PRESENT))        //Case 1: No card present before 
+picc.c~:110:        picc->type = PICC_ABSENT;
+picc.c~:111:		picc->name = "none";
+picc.c~:114:        if(BITISSET(picc->pcd->support_card_type, TYPEA))
+picc.c~:121:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, TYPEB)))
+picc.c~:128:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, FELICA212)))
+picc.c~:134:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, FELICA414)))
+picc.c~:140:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, TOPAZ)))
+picc.c~:148:        if(picc->type == PICC_ABSENT)
+picc.c~:152:            CLEAR_BIT(picc->status, PRESENT);
+picc.c~:153:            CLEAR_BIT(picc->status, FIRST_INSERT);
+picc.c~:154:            CLEAR_BIT(picc->status, ACTIVATED);
+picc.c~:155:            picc->key_valid = 0x00;
+picc.c~:160:            SET_BIT(picc->status, PRESENT);        // Card Inserted
+picc.c~:161:            SET_BIT(picc->status, FIRST_INSERT);
+picc.c~:162:            SET_BIT(picc->status, ACTIVATED);
+picc.c~:163:            SET_BIT(picc->status, SLOT_CHANGE);
+picc.c~:164:            picc->pcd->poll_interval = 1000;
+picc.c~:166:			/* INFO_TO("found picc %s\n", picc->name); */
+picc.c~:172:        if(picc->type == PICC_MIFARE)
+picc.c~:193://       else if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c~:194:if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c~:197:            if(picc->states == PICC_ACTIVATED)
+picc.c~:217:                if(picc->type == PICC_TYPEA_TCL)
+picc.c~:219:                    if(picc->states == PICC_POWEROFF)
+picc.c~:244:                    if(picc->states == PICC_POWEROFF)
+picc.c~:268:        else if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))   // add--s
+picc.c~:270:            if(picc->states == PICC_POWEROFF)
+picc.c~:286:        else if(picc->type == PICC_TOPAZ)
+picc.c~:288:            if(picc->states == PICC_POWEROFF)
+picc.c~:313:            SET_BIT(picc->status, PRESENT);
+picc.c~:318:            CLEAR_BIT(picc->status, PRESENT);
+picc.c~:319:            CLEAR_BIT(picc->status, FIRST_INSERT);
+picc.c~:320:            CLEAR_BIT(picc->status, ACTIVATED);
+picc.c~:321:            SET_BIT(picc->status, SLOT_CHANGE);
+picc.c~:323:            picc->type = PICC_ABSENT;
+picc.c~:324:			picc->name = "none";
+picc.c~:325:            picc->pcd->current_speed = 0x80;
+picc.c~:331://    TRACE_TO("exit %s, piccType = %02X\n", __func__, picc->type);
+picc.c~:342:    if(BITISCLEAR(picc->pcd->flags_polling, AUTO_POLLING))
+picc.c~:348:    if(picc->states == PICC_POWEROFF)
+picc.c~:351:        //if((picc->type == PICC_MIFARE) || (picc->type == PICC_TYPEA_TCL)) 
+picc.c~:352:        if(picc->type == PICC_TYPEA_TCL)
+picc.c~:354:            picc->key_valid = 0x00;
+picc.c~:358:        else if(picc->type == PICC_TYPEB_TCL)
+picc.c~:364:        else if(picc->type == PICC_FELICA212)
+picc.c~:369:        else if(picc->type == PICC_FELICA424)
+picc.c~:375:        else if(picc->type == PICC_TOPAZ)
+picc.c~:383:            picc->type = PICC_ABSENT;
+picc.c~:384:			picc->name = "none";
+picc.c~:388:    if(picc->type == PICC_ABSENT)
+picc.c~:391:        CLEAR_BIT(picc->status, ACTIVATED);
+picc.c~:397:        SET_BIT(picc->status, ACTIVATED);       // Card Activate
+picc.c~:410:    if(BITISCLEAR(picc->status, FIRST_INSERT))
+picc.c~:412:        if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c~:416:                if(picc->type == PICC_TYPEA_TCL)
+picc.c~:426:       // else if(picc->type == PICC_MIFARE)
+picc.c~:430:        CLEAR_BIT(picc->status, ACTIVATED);
+picc.c~:432:        if(BITISCLEAR(picc->pcd->flags_polling, AUTO_POLLING))
+picc.c~:528:	struct pn512_request	*req = picc->request;
+picc.c~:547:            if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))
+picc.c~:557:            else if(picc->type == PICC_TOPAZ)
+picc.c~:571:                picc->flags_status = 0x00;
+picc.c~:604:                if(tempLe <= picc->sn_len)
+picc.c~:607:                    for(i = 0; i < picc->sn_len; i++)
+picc.c~:609:                        resBuf[i] = picc->sn[i];
+picc.c~:611:                    if((tempLe == 0x00) || (tempLe == picc->sn_len))
+picc.c~:615:                        *resLen     = picc->sn_len + 2;
+picc.c~:620:                        resBuf[tempLe + 1] = picc->sn_len;
+picc.c~:638:                if (picc->type == PICC_TYPEA_TCL)
+picc.c~:640:                    for(i = 0; i < picc->ATS[0]; i++)
+picc.c~:642:                        resBuf[i] = picc->ATS[i];
+picc.c~:644:                    if(tempLe && (tempLe != picc->ATS[0]))
+picc.c~:647:                        resBuf[tempLe + 1] = picc->ATS[0];
+picc.c~:654:                        *resLen     = picc->ATS[0] + 2;
+picc.c~:688:           // if(picc->type == PICC_MIFARE)
+picc.c~:702:        if(((picc->type == PICC_TYPEA_TCL)||(picc->type == PICC_TYPEB_TCL)) && (picc->states == PICC_ACTIVATED))
+picc.c~:708:                CLEAR_BIT(picc->status, ACTIVATED);
+picc.c~:712:        else if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))
+picc.c~:723:        else if(picc->type == PICC_TOPAZ)
+iso14443_typeA.c:18:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c:23:    if (picc->states != PICC_POWEROFF)
+iso14443_typeA.c:38:        picc->states = PICC_IDLE;
+iso14443_typeA.c:56:    struct pn512_request	*req = picc->request;
+iso14443_typeA.c:154:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c:180:    picc->SAK = 0;
+iso14443_typeA.c:190:			picc->SAK = req->buf[0];
+iso14443_typeA.c:192:			INFO_TO("sak: %02X\n", picc->SAK);
+iso14443_typeA.c:206:	struct pn512_request	*req = picc->request;
+iso14443_typeA.c:228:        picc->ATQA[0] = 0x00;
+iso14443_typeA.c:229:        picc->ATQA[1] = 0x00;
+iso14443_typeA.c:239:            picc->ATQA[0] = 0x00;
+iso14443_typeA.c:240:            picc->ATQA[1] = 0x00;
+iso14443_typeA.c:245:			picc->ATQA[0] = req->buf[0];
+iso14443_typeA.c:246:			picc->ATQA[1] = req->buf[1];
+iso14443_typeA.c:248:            picc->states = PICC_READY;
+iso14443_typeA.c:250:			INFO_TO("ATQA: %02X %02X\n", picc->ATQA[0], picc->ATQA[1]);
+iso14443_typeA.c:307:                memcpy(picc->sn, cardUID+1, 3);
+iso14443_typeA.c:308:                picc->sn_len = 3;
+iso14443_typeA.c:312:                memcpy(picc->sn, cardUID, 4);
+iso14443_typeA.c:313:                picc->sn_len = 4;
+iso14443_typeA.c:322:                memcpy(picc->sn + 3, cardUID+1,3);
+iso14443_typeA.c:323:                picc->sn_len = 6;
+iso14443_typeA.c:327:                memcpy(picc->sn + 3, cardUID, 4);
+iso14443_typeA.c:328:                picc->sn_len = 7;
+iso14443_typeA.c:335:            memcpy(picc->sn+6, cardUID, 4);
+iso14443_typeA.c:336:            picc->sn_len = 10;
+iso14443_typeA.c:346:        for(level = 0; level < picc->sn_len; level++)
+iso14443_typeA.c:348:            INFO_TO(" %02X\n", picc->sn[level]);
+iso14443_typeA.c:376:    	sak = picc->SAK & 0x24;
+iso14443_typeA.c:383:            picc->CID = get_cid(picc->sn);
+iso14443_typeA.c:384:            if((BITISSET(picc->pcd->flags_polling, AUTO_RATS)))
+iso14443_typeA.c:390:                    picc->type = PICC_TYPEA_TCL;        // typeaA PICC which compliant to ISO/IEC 14443-4 
+iso14443_typeA.c:391:                    picc->name = "standard typeA";
+iso14443_typeA.c:393:                    picc->FSC = FSCConvertTbl[picc->FSCI] - 3;      // FSC excluding EDC and PCB, refer to Figure14 --- Block format
+iso14443_typeA.c:394:                    if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14443_typeA.c:396:                        picc->FSC--;                              // FSC excluding CID, refer to Figure14 --- Block format
+iso14443_typeA.c:406:                    picc->type = PICC_ABSENT;
+iso14443_typeA.c:407:					picc->name = "none";
+iso14443_typeA.c:413://            picc->type = PICC_MIFARE;
+iso14443_typeA.c:420:        picc->type = PICC_ABSENT;
+iso14443_typeA.c:421:		picc->name = "none";
+iso14443_typeB.c:17: 	struct pn512_request	*req = picc->request;
+iso14443_typeB.c:43:			memcpy(&picc->ATQB, req->buf, req->actual);
+iso14443_typeB.c:45:			picc->ATQB_len = req->actual;
+iso14443_typeB.c:46:            if(picc->ATQB[0] != 0x50)
+iso14443_typeB.c:52:                picc->states = PICC_READY;
+iso14443_typeB.c:70: 	struct pn512_request	*req = picc->request;
+iso14443_typeB.c:99:				memcpy(&picc->ATQB, req->buf, req->actual);
+iso14443_typeB.c:100:				picc->ATQB_len = req->actual;
+iso14443_typeB.c:101:                if(picc->ATQB[0] != 0x50)
+iso14443_typeB.c:107:                    picc->states = PICC_READY;
+iso14443_typeB.c:110:							picc->ATQB[1], picc->ATQB[2], picc->ATQB[3], picc->ATQB[4]);
+iso14443_typeB.c:127:    CLEAR_BIT(picc->flags_TCL, PCD_BLOCK_NUMBER);
+iso14443_typeB.c:129:    memcpy(picc->sn, ATQB+1, 4);            // copy PUPI
+iso14443_typeB.c:130:    picc->sn_len = 4;
+iso14443_typeB.c:132:    picc->speed = ATQB[9];
+iso14443_typeB.c:134:    picc->FSCI = ATQB[10] >> 4;
+iso14443_typeB.c:135:    if(picc->FSCI > 8)
+iso14443_typeB.c:137:        picc->FSCI = 8;
+iso14443_typeB.c:143:        SET_BIT(picc->flags_TCL, CID_PRESENT);
+iso14443_typeB.c:144:        picc->CID = get_cid(picc->sn);
+iso14443_typeB.c:148:        CLEAR_BIT(picc->flags_TCL, CID_PRESENT);
+iso14443_typeB.c:149:        picc->CID = 0;
+iso14443_typeB.c:152:    picc->FWI = ATQB[11] >> 4;
+iso14443_typeB.c:153:    if(picc->FWI > 14)
+iso14443_typeB.c:155:        picc->FWI = 4;          // compliant to ISO14443-3:2011
+iso14443_typeB.c:160:        picc->support_part4 = 0x01;        // PICC compliant with ISO/IEC 14443-4
+iso14443_typeB.c:164:        picc->support_part4 = 0x00;        // PICC not compliant with ISO/IEC 14443-4
+iso14443_typeB.c:170:        picc->SFGI = 0;    // 10etu + 32 / fs
+iso14443_typeB.c:174:        picc->SFGI = 1;    // 10etu + 128 / fs
+iso14443_typeB.c:178:        picc->SFGI = 1;   // 10etu + 256 / fs
+iso14443_typeB.c:182:        picc->SFGI = 2;    // 10etu + 512 / fs    
+iso14443_typeB.c:185:    if(picc->ATQB_len == 13)
+iso14443_typeB.c:189:        picc->SFGI = ATQB[12] >> 4;
+iso14443_typeB.c:190:        if(picc->SFGI > 14)
+iso14443_typeB.c:192:            picc->SFGI = 0;
+iso14443_typeB.c:200:	struct pn512_request	*req = picc->request;
+iso14443_typeB.c:209:	memcpy(req->buf+1, picc->sn, 4);
+iso14443_typeB.c:210:	memcpy(req->buf+5, picc->attrib_param, 4);
+iso14443_typeB.c:217:	SET_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c:219:	typeA_set_timeout(picc, picc->FWI);
+iso14443_typeB.c:223:    CLEAR_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c:227:	memcpy(picc->attrib_response, req->buf, req->actual);
+iso14443_typeB.c:229:    if((picc->attrib_response[0] & 0x0F) != picc->CID)
+iso14443_typeB.c:252:    typeB_ATQB_analysis(picc, picc->ATQB);
+iso14443_typeB.c:256:    picc->attrib_param[0] = 0x00;                                // param 1:  TR0 = 64 /fs, TR1 = 80 / fs, SOF required, EOF required
+iso14443_typeB.c:257:    picc->attrib_param[1] = (speedParam << 4) | picc->pcd->FSDI;    // param 2: 
+iso14443_typeB.c:258:    picc->attrib_param[2] = picc->support_part4;                         // param 3:
+iso14443_typeB.c:259:    picc->attrib_param[3] = picc->pcd->CID & 0x0f;                  // param 4:
+iso14443_typeB.c:264:        picc->states = PICC_ACTIVATED;
+iso14443_typeB.c:275:	struct pn512_request	*req = picc->request;
+iso14443_typeB.c:280:    if (picc->states != PICC_POWEROFF)
+iso14443_typeB.c:288:		memcpy(&req->buf[1], picc->sn, 4);
+iso14443_typeB.c:295:		SET_BIT(picc->flags_TCL, TYPEB_ATTRIB);
+iso14443_typeB.c:297:		typeA_set_timeout(picc, picc->FWI);
+iso14443_typeB.c:306:            picc->states= PICC_IDLE;
+iso14443_typeB.c:337:            picc->type = PICC_ABSENT;
+iso14443_typeB.c:338:			picc->name = "none";
+iso14443_typeB.c:363:            picc->type = PICC_TYPEB_TCL;
+iso14443_typeB.c:364:			picc->name = "standard typeB";
+iso14443_typeB.c:365:            picc->FSC = FSCConvertTbl[picc->FSCI] - 3;    // FSC excluding EDC and PCB
+iso14443_typeB.c:366:            if(BITISSET(picc->flags_TCL, CID_PRESENT))
+iso14443_typeB.c:368:                picc->FSC--;        // FSC excluding CID
+iso14443_typeB.c:377:            picc->type = PICC_ABSENT;
+iso14443_typeB.c:378:			picc->name = "none";
+iso14443_typeB.c:383:        picc->type = PICC_ABSENT;
+iso14443_typeB.c:384:		picc->name = "none";
+pcsc.c:37:    if((picc->type == PICC_MIFARE) || (picc->type == PICC_FELICA212)
+pcsc.c:38:		|| (picc->type == PICC_FELICA424) || (picc->type == PICC_TOPAZ))
+pcsc.c:47:        if(picc->type == PICC_FELICA212)
+pcsc.c:53:        else if(picc->type == PICC_FELICA424)
+pcsc.c:59:        else if(picc->type == PICC_TOPAZ)
+pcsc.c:66:            if(picc->SAK == 0x08)
+pcsc.c:72:            else if(picc->SAK == 0x18)
+pcsc.c:78:            else if(picc->SAK == 0x00)
+pcsc.c:84:            else if(picc->SAK == 0x09)
+pcsc.c:94:                atrBuf[14] = picc->SAK;
+pcsc.c:108:        if(picc->type == PICC_TYPEA_TCL)
+pcsc.c:112:            j = picc->ATS[0] - 2;        // Excluding TL and T0
+pcsc.c:113:            if(picc->ATS[1] & 0x10)      //TA1
+pcsc.c:118:            if(picc->ATS[1] & 0x20)      //TB1
+pcsc.c:123:            if(picc->ATS[1] & 0x40)      //TC1
+pcsc.c:136:            while(i < picc->ATS[0])
+pcsc.c:138:                atrBuf[4 + j] =  picc->ATS[i];
+pcsc.c:151:        else if(picc->type == PICC_TYPEB_TCL)
+pcsc.c:160:                atrBuf[4+i] = picc->ATQB[5 + i];
+pcsc.c:162:            atrBuf[11] = picc->attrib_response[0] & 0xF0;
+pcsc.c:193:                picc->pcd->FSDI = paramCmd[2]; 
+pcsc.c:199:                paramRes[2] = picc->pcd->FSDI;
+pcsc.c:207:                picc->FSCI = paramCmd[2]; 
+pcsc.c:213:                paramRes[2] = picc->FSCI;
+pcsc.c:221:                picc->FWI = paramCmd[2]; 
+pcsc.c:227:                paramRes[2] = picc->FWI;
+pcsc.c:235:                picc->pcd->max_speed = paramCmd[2];
+pcsc.c:241:                paramRes[2] = picc->pcd->max_speed;
+pcsc.c:249:                picc->pcd->current_speed = paramCmd[2];
+pcsc.c:255:                paramRes[2] = picc->pcd->current_speed;
+pcsc.c:277:                picc->PCB = paramCmd[2];
+pcsc.c:283:                paramRes[2] = picc->PCB;
+pcsc.c:291:                picc->CID       = paramCmd[2];
+pcsc.c:297:                paramRes[2] = picc->CID;
+pcsc.c:309:                memcpy(picc->attrib_param, paramCmd + 2, 4);
+pcsc.c:315:                memcpy(paramRes + 2, picc->attrib_param, 4);
+pcsc.c:337:	struct pn512_request	*req = picc->request;
+pcsc.c:343:    pn512_reg_write(BitFramingReg, picc->last_tx_valid_bits & 0x07);   // set TxLastBits to 7 
+pcsc.c:345:    if(picc->flags_status)
+pcsc.c:347:        if(BITISCLEAR(picc->flags_tx_rx, TXCRC))
+pcsc.c:352:        if(BITISCLEAR(picc->flags_tx_rx, RXCRC))
+pcsc.c:357:        if(BITISCLEAR(picc->flags_tx_rx, TXPARITY))
+pcsc.c:362:        if(BITISCLEAR(picc->flags_tx_rx, PROLOGUE))
+pcsc.c:365:			req->buf[req->length++] = picc->pcd->PCB;
+pcsc.c:366:			if(BITISSET(picc->flags_TCL, CID_PRESENT))
+pcsc.c:367:				req->buf[req->length++] = picc->CID;
+pcsc.c:473:    picc->previous_cmd = OJ_Idle;
+pcsc.c:496:            picc->previous_cmd = CMD_DO_VERSIONDATA;
+pcsc.c:502:                picc->transfer_status     = 0x01;
+pcsc.c:503:                picc->flags_status      = 0x00;
+pcsc.c:504:                picc->last_rx_valid_bits = 0x00;
+pcsc.c:505:                picc->last_tx_valid_bits = 0x00;
+pcsc.c:514:            picc->previous_cmd = CMD_DO_STARTTRANS;
+pcsc.c:520:                picc->transfer_status = 0x00;
+pcsc.c:521:                picc->flags_status  = 0x00;
+pcsc.c:530:            picc->previous_cmd = CMD_DO_ENDTRANS;
+pcsc.c:536:                if(picc->transfer_status == 0x01)
+pcsc.c:554:            picc->previous_cmd = CMD_DO_TURNOFF_RF;
+pcsc.c:562:                    picc->next_cmd = OJ_Idle;
+pcsc.c:566:                    picc->next_cmd = cmdBuf[i + 7];
+pcsc.c:571:                    picc->next_cmd = cmdBuf[i + 7];
+pcsc.c:581:                if(picc->next_cmd == CMD_DO_TRANSCEIVE_DATA)
+pcsc.c:585:                else if(picc->next_cmd != OJ_Idle)
+pcsc.c:602:            picc->previous_cmd = CMD_DO_TIMER;
+pcsc.c:608:                if(picc->transfer_status == 0x01)
+pcsc.c:626:            picc->previous_cmd = CMD_DO_TURNON_RF;
+pcsc.c:659:            picc->previous_cmd = CMD_DO_PARAMETERS;
+pcsc.c:705:            picc->previous_cmd = CMD_DO_PARAMETERS;
+pcsc.c:710:        else if(((cmdBuf[i] & 0xF0) == 0x90) && (cmdtype == TRANSPARENT_EXCHANGE) && (picc->transfer_status==0x01))
+pcsc.c:716:                    picc->flags_tx_rx = MAKEWORD(cmdBuf[i + 3], cmdBuf[i + 2]);
+pcsc.c:717:                    picc->flags_status = 0x01;
+pcsc.c:726:                picc->previous_cmd = CMD_DO_TRANSCEIVE_FLAG;
+pcsc.c:732:                    picc->last_tx_valid_bits = cmdBuf[i + 2];
+pcsc.c:741:                picc->previous_cmd = CMD_DO_TRANS_BIT_FRAM;
+pcsc.c:747:                    picc->last_rx_valid_bits = cmdBuf[i + 2];
+pcsc.c:756:                picc->previous_cmd = CMD_DO_REC_BIT_FRAM;
+pcsc.c:774:                picc->previous_cmd = CMD_DO_TRANSMIT;
+pcsc.c:790:                        if(picc->states == PICC_ACTIVATED)
+pcsc.c:792:                            typeA_set_timeout(picc, picc->FWI);
+pcsc.c:817:                picc->previous_cmd = CMD_DO_RECEIVE;
+pcsc.c:830:                        if(picc->states == PICC_ACTIVATED)
+pcsc.c:832:                            typeA_set_timeout(picc, picc->FWI);
+pcsc.c:857:                picc->previous_cmd = CMD_DO_TRANSCEIVE_DATA;
+pcsc.c:863:        else if((cmdBuf[i] == CMD_DO_SWITCH_PROTOCOL) && (picc->transfer_status == 0x01))
+pcsc.c:881:                            if(picc->states == PICC_ACTIVATED)
+pcsc.c:885:                            else if(picc->states == PICC_POWEROFF)
+pcsc.c:900:                                resBuf[j++] = picc->SAK;
+pcsc.c:909:                            if(picc->states == PICC_ACTIVATED)
+pcsc.c:913:                            else if(picc->states == PICC_POWEROFF)
+pcsc.c:923:                            if(picc->type != PICC_ABSENT)
+pcsc.c:955:                            if(picc->states == PICC_ACTIVATED)
+pcsc.c:959:                            else if(picc->states == PICC_POWEROFF)
+pcsc.c:978:                                resBuf[j++] = picc->ATQB[9];
+pcsc.c:979:                                resBuf[j++] = picc->ATQB[10];
+pcsc.c:980:                                resBuf[j++] = picc->ATQB[11];
+pcsc.c:990:                            if(picc->states == PICC_ACTIVATED)
+pcsc.c:994:                            else if(picc->states == PICC_POWEROFF)
+pcsc.c:1004:                            if(picc->type != PICC_ABSENT)
+picc.c:100:    picc->states = PICC_IDLE;
+picc.c:108:    if(BITISCLEAR(picc->status, PRESENT))        //Case 1: No card present before 
+picc.c:110:        picc->type = PICC_ABSENT;
+picc.c:111:		picc->name = "none";
+picc.c:114:        if(BITISSET(picc->pcd->support_card_type, TYPEA))
+picc.c:121:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, TYPEB)))
+picc.c:128:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, FELICA212)))
+picc.c:134:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, FELICA414)))
+picc.c:140:        if((picc->type == PICC_ABSENT) && (BITISSET(picc->pcd->support_card_type, TOPAZ)))
+picc.c:148:        if(picc->type == PICC_ABSENT)
+picc.c:152:            CLEAR_BIT(picc->status, PRESENT);
+picc.c:153:            CLEAR_BIT(picc->status, FIRST_INSERT);
+picc.c:154:            CLEAR_BIT(picc->status, ACTIVATED);
+picc.c:155:            picc->key_valid = 0x00;
+picc.c:160:            SET_BIT(picc->status, PRESENT);        // Card Inserted
+picc.c:161:            SET_BIT(picc->status, FIRST_INSERT);
+picc.c:162:            SET_BIT(picc->status, ACTIVATED);
+picc.c:163:            SET_BIT(picc->status, SLOT_CHANGE);
+picc.c:164:            picc->pcd->poll_interval = 1000;
+picc.c:166:			/* INFO_TO("found picc %s\n", picc->name); */
+picc.c:172:        if(picc->type == PICC_MIFARE)
+picc.c:193://       else if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c:194:if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c:197:            if(picc->states == PICC_ACTIVATED)
+picc.c:217:                if(picc->type == PICC_TYPEA_TCL)
+picc.c:219:                    if(picc->states == PICC_POWEROFF)
+picc.c:244:                    if(picc->states == PICC_POWEROFF)
+picc.c:268:        else if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))   // add--s
+picc.c:270:            if(picc->states == PICC_POWEROFF)
+picc.c:286:        else if(picc->type == PICC_TOPAZ)
+picc.c:288:            if(picc->states == PICC_POWEROFF)
+picc.c:313:            SET_BIT(picc->status, PRESENT);
+picc.c:318:            CLEAR_BIT(picc->status, PRESENT);
+picc.c:319:            CLEAR_BIT(picc->status, FIRST_INSERT);
+picc.c:320:            CLEAR_BIT(picc->status, ACTIVATED);
+picc.c:321:            SET_BIT(picc->status, SLOT_CHANGE);
+picc.c:323:            picc->type = PICC_ABSENT;
+picc.c:324:			picc->name = "none";
+picc.c:325:            picc->pcd->current_speed = 0x80;
+picc.c:331://    TRACE_TO("exit %s, piccType = %02X\n", __func__, picc->type);
+picc.c:342:    if(BITISCLEAR(picc->pcd->flags_polling, AUTO_POLLING))
+picc.c:348:    if(picc->states == PICC_POWEROFF)
+picc.c:351:        //if((picc->type == PICC_MIFARE) || (picc->type == PICC_TYPEA_TCL)) 
+picc.c:352:        if(picc->type == PICC_TYPEA_TCL)
+picc.c:354:            picc->key_valid = 0x00;
+picc.c:358:        else if(picc->type == PICC_TYPEB_TCL)
+picc.c:364:        else if(picc->type == PICC_FELICA212)
+picc.c:369:        else if(picc->type == PICC_FELICA424)
+picc.c:375:        else if(picc->type == PICC_TOPAZ)
+picc.c:383:            picc->type = PICC_ABSENT;
+picc.c:384:			picc->name = "none";
+picc.c:388:    if(picc->type == PICC_ABSENT)
+picc.c:391:        CLEAR_BIT(picc->status, ACTIVATED);
+picc.c:397:        SET_BIT(picc->status, ACTIVATED);       // Card Activate
+picc.c:410:    if(BITISCLEAR(picc->status, FIRST_INSERT))
+picc.c:412:        if((picc->type == PICC_TYPEA_TCL) || (picc->type == PICC_TYPEB_TCL))
+picc.c:416:                if(picc->type == PICC_TYPEA_TCL)
+picc.c:426:       // else if(picc->type == PICC_MIFARE)
+picc.c:430:        CLEAR_BIT(picc->status, ACTIVATED);
+picc.c:432:        if(BITISCLEAR(picc->pcd->flags_polling, AUTO_POLLING))
+picc.c:528:	struct pn512_request	*req = picc->request;
+picc.c:547:            if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))
+picc.c:557:            else if(picc->type == PICC_TOPAZ)
+picc.c:571:                picc->flags_status = 0x00;
+picc.c:604:                if(tempLe <= picc->sn_len)
+picc.c:607:                    for(i = 0; i < picc->sn_len; i++)
+picc.c:609:                        resBuf[i] = picc->sn[i];
+picc.c:611:                    if((tempLe == 0x00) || (tempLe == picc->sn_len))
+picc.c:615:                        *resLen     = picc->sn_len + 2;
+picc.c:620:                        resBuf[tempLe + 1] = picc->sn_len;
+picc.c:638:                if (picc->type == PICC_TYPEA_TCL)
+picc.c:640:                    for(i = 0; i < picc->ATS[0]; i++)
+picc.c:642:                        resBuf[i] = picc->ATS[i];
+picc.c:644:                    if(tempLe && (tempLe != picc->ATS[0]))
+picc.c:647:                        resBuf[tempLe + 1] = picc->ATS[0];
+picc.c:654:                        *resLen     = picc->ATS[0] + 2;
+picc.c:688:           // if(picc->type == PICC_MIFARE)
+picc.c:702:        if(((picc->type == PICC_TYPEA_TCL)||(picc->type == PICC_TYPEB_TCL)) && (picc->states == PICC_ACTIVATED))
+picc.c:708:                CLEAR_BIT(picc->status, ACTIVATED);
+picc.c:712:        else if((picc->type == PICC_FELICA212) || (picc->type == PICC_FELICA424))
+picc.c:723:        else if(picc->type == PICC_TOPAZ)
+felica.c:299:	struct pn512_request	*req = picc->request;
+felica.c:346:        memcpy(picc->sn, tempBuf + 2, 8);    // NFCID2, 8 bytes
+felica.c:351:		picc->sn_len = 8;
+felica.c:352:        memcpy(picc->PAD, tempBuf + 10, 8);
+felica.c:355:            memcpy(picc->system_code, tempBuf + 18, 2);
+felica.c:378:            picc->type = PICC_FELICA212;
+felica.c:379:			picc->name = "felica 212";
+felica.c:380:            picc->pcd->current_speed |= 0x09;        // ~ 212 kbit/s)
+felica.c:384:            picc->type = PICC_FELICA424;
+felica.c:385:			picc->name = "felica 414";
+felica.c:386:            picc->pcd->current_speed |= 0x12;        // ~ 424 kbit/s)
+felica.c:391:        picc->type = PICC_ABSENT;
+felica.c:392:		picc->name = "none";
+felica.c:420:            timeout = picc->PAD[3];
+felica.c:425:            timeout = picc->PAD[2];
+felica.c:430:            timeout = picc->PAD[5];
+felica.c:435:            timeout = picc->PAD[6];
+felica.c:440:            timeout = picc->PAD[5];
+felica.c:445:            timeout = picc->PAD[6];
+felica.c:450:            timeout = picc->PAD[4];
+felica.c:456:            timeout = picc->PAD[4];
+felica.c:489:	struct pn512_request	*req = picc->request;
+felica.c:494:	req->buf[0] = tempBuf[0] = picc->sn_len + 2;
+felica.c:496:	memcpy(req->buf+2, picc->sn, picc->sn_len);
+felica.c:497:	req->length = picc->sn_len+2;
+felica.c:535:	struct pn512_request	*req = &picc->request;
+felica.c:580:	struct pn512_request	*req = picc->request;

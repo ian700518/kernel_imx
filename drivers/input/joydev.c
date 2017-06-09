@@ -792,6 +792,7 @@ static int joydev_connect(struct input_handler *handler, struct input_dev *dev,
 	if (dev_no < JOYDEV_MINOR_BASE + JOYDEV_MINORS)
 		dev_no -= JOYDEV_MINOR_BASE;
 	dev_set_name(&joydev->dev, "js%d", dev_no);
+	dev_info(&joydev->dev, "js%d", dev_no);
 
 	joydev->handle.dev = input_get_device(dev);
 	joydev->handle.name = dev_name(&joydev->dev);
@@ -865,6 +866,7 @@ static int joydev_connect(struct input_handler *handler, struct input_dev *dev,
 	if (error)
 		goto err_cleanup_joydev;
 
+	//printk("func_name : %s, line_num : %d\n", __func__, __LINE__);
 	return 0;
 
  err_cleanup_joydev:
@@ -944,6 +946,7 @@ static struct input_handler joydev_handler = {
 
 static int __init joydev_init(void)
 {
+	printk("func_name : %s, line_num : %d\n", __func__, __LINE__);
 	return input_register_handler(&joydev_handler);
 }
 

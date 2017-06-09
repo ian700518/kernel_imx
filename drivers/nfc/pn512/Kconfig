@@ -1,0 +1,17 @@
+
+config NFC_PN512
+	tristate "NXP PN512 NFC driver"
+	depends on NFC
+	---help---
+	  NXP PN512 core driver.
+	  This is a driver based on the HCI NFC kernel layers and
+	  will thus not work with NXP libnfc library.
+
+	  To compile this driver as a module, choose m here. The module will
+	  be called pn512.
+	  Say N if unsure.
+
+
+
+
+

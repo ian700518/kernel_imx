@@ -1,0 +1,121 @@
+pcd.c~:60:    if(down_interruptible(&common->mutex))    // acquire the semaphore
+pcd.c~:92:			if((ret = picc_power_on(&common->picc, p_oData, &KerParam.oDataLen)) != 0)	
+pcd.c~:114:            picc_power_off(&common->picc);
+pcd.c~:136:            if((ret = picc_command_exchange(&common->picc, p_iData, KerParam.iDataLen, p_oData, &KerParam.oDataLen, &level)) != 0)	
+pcd.c~:161:	up(&common->mutex); 
+pcd.c~:170:    up(&common->mutex);                    // release the semaphore
+pcd.c~:178:    if(common->sem_inc > 0)    return(-ERESTARTSYS);
+pcd.c~:179:    common->sem_inc++;
+pcd.c~:190:	common->sem_inc--;
+pcd.c~:201:    if(down_trylock(&common->mutex))    
+pcd.c~:206:    if(BITISSET(common->pcd.flags_polling, AUTO_POLLING) && BITISSET(common->pcd.flags_polling, POLLING_CARD_ENABLE))
+pcd.c~:208:        picc_polling_tags(&common->picc);
+pcd.c~:210:		if(BITISSET(common->picc.status, SLOT_CHANGE))
+pcd.c~:213:			if(!picc_interrput_in(common->picc.status & PRESENT))
+pcd.c~:215:				CLEAR_BIT(common->picc.status, SLOT_CHANGE);
+pcd.c~:223:    up(&common->mutex);
+pcd.c~:227:	queue_delayed_work(common->polling, &card_Poll, (common->pcd.poll_interval * HZ) / 1000);
+pcd.c~:460:    sema_init(&common->mutex, 0);    // initial a semaphore, and lock it       
+pcd.c~:470:    common->polling = create_singlethread_workqueue("polling picc");
+pcd.c~:471:    if(!common->polling)
+pcd.c~:478:    up(&common->mutex);                 
+pcd.c~:486:    up(&common->mutex);
+pcd.c~:514:    if (down_interruptible(&common->mutex)) 
+pcd.c~:521:        flush_workqueue(common->polling);
+pcd.c~:523:    destroy_workqueue(common->polling);
+pcd.c~:529:    up(&common->mutex);
+ccid_picc.c:10:	if(BITISCLEAR(common->picc.status, PRESENT))
+ccid_picc.c:12:	else if(BITISCLEAR(common->picc.status, ACTIVATED))
+ccid_picc.c:23:	ret = picc_power_on(&common->picc, picc_data->rBuf, &picc_data->rLen);
+ccid_picc.c:32:	picc_power_off(&common->picc);
+ccid_picc.c:56:	ret = picc_command_exchange(&common->picc, picc_data->sBuf, picc_data->sLen,
+ccid_picc.c:80:	if(fsdi_to_fsd[common->picc.FSCI] > (u16)0xFE)		
+ccid_picc.c:83:		picc_data->rBuf[5] = (u8)fsdi_to_fsd[common->picc.FSCI];	
+ccid_picc.c:123:	if(!common->slot_changed_notify)
+ccid_picc.c:126:	return(common->slot_changed_notify(common->private_data, slot_status));
+ccid_picc.c:136:	common->slot_changed_notify = picc_intr_in;
+ccid_picc.c:138:	common->private_data = pri_data;
+ccid_picc.c:147:	common->slot_changed_notify = NULL;
+ccid_picc.c:149:	common->private_data = NULL;
+picc.c~:749:	else if(fsd < 24)	common->pcd.FSDI = 0;		// FSD = 16 Bytes
+picc.c~:750:	else if(fsd < 32)	common->pcd.FSDI = 1;		// FSD = 24 Bytes
+picc.c~:751:	else if(fsd < 40)	common->pcd.FSDI = 2;		// FSD = 32 Bytes
+picc.c~:752:	else if(fsd < 48)	common->pcd.FSDI = 3;		// FSD = 40 Bytes
+picc.c~:753:	else if(fsd < 64)	common->pcd.FSDI = 4;		// FSD = 48 Bytes
+picc.c~:754:	else if(fsd < 96)	common->pcd.FSDI = 5;		// FSD = 64 Bytes
+picc.c~:755:	else if(fsd < 128)	common->pcd.FSDI = 6;		// FSD = 96 Bytes
+picc.c~:756:	else if(fsd < 256)	common->pcd.FSDI = 7;		// FSD = 128 Bytes
+picc.c~:757:	else		common->pcd.FSDI = 8;			// FSD is not more than 256 Bytes
+picc.c~:760:        /* common->pcd.support_card_type = TOPAZ|FELICA414|FELICA212|TYPEB|TYPEA;    // poll all card type */
+picc.c~:761:        common->pcd.support_card_type = TYPEA;
+picc.c~:762:	common->pcd.flags_polling     = POLLING_CARD_ENABLE|AUTO_POLLING|AUTO_RATS;    // auto RATS, auto poll, poll card
+picc.c~:763:    common->pcd.max_speed   = 0x1B;
+picc.c~:764:    common->pcd.max_speed   = 0x1B;
+picc.c~:765:    common->pcd.current_speed   = 0x80;
+picc.c~:766:    common->pcd.poll_interval = 500;     // poll card interval time: default 500ms
+picc.c~:768:    common->picc.states   = 0x00;
+picc.c~:769:    common->picc.flags_TCL    = 0x00;
+picc.c~:770:    common->picc.FSCI     = 0x02;    // 32 bytes
+picc.c~:771:    common->picc.FWI      = 0x04;    // 4.8ms
+picc.c~:772:    common->picc.SFGI     = 0x00;    // default value is 0
+picc.c~:773:    common->picc.speed    = 0x80;
+picc.c~:774:	common->picc.key_valid = 0x00;
+picc.c~:776:	//memset(common->pcd.mifare_key, 0xFF, sizeof(common->pcd.mifare_key));
+picc.c~:778:    common->picc.flags_status = 0x00;
+picc.c~:780:	common->pcd.picc = &common->picc;
+picc.c~:781:	common->picc.pcd = &common->pcd;
+picc.c~:790:	ret = pn512_init(&common->picc.request);      
+pcd.c:60:    if(down_interruptible(&common->mutex))    // acquire the semaphore
+pcd.c:92:			if((ret = picc_power_on(&common->picc, p_oData, &KerParam.oDataLen)) != 0)	
+pcd.c:114:            picc_power_off(&common->picc);
+pcd.c:136:            if((ret = picc_command_exchange(&common->picc, p_iData, KerParam.iDataLen, p_oData, &KerParam.oDataLen, &level)) != 0)	
+pcd.c:161:	up(&common->mutex); 
+pcd.c:170:    up(&common->mutex);                    // release the semaphore
+pcd.c:178:    if(common->sem_inc > 0)    return(-ERESTARTSYS);
+pcd.c:179:    common->sem_inc++;
+pcd.c:190:	common->sem_inc--;
+pcd.c:201:    if(down_trylock(&common->mutex))    
+pcd.c:206:    if(BITISSET(common->pcd.flags_polling, AUTO_POLLING) && BITISSET(common->pcd.flags_polling, POLLING_CARD_ENABLE))
+pcd.c:208:        picc_polling_tags(&common->picc);
+pcd.c:210:		if(BITISSET(common->picc.status, SLOT_CHANGE))
+pcd.c:213:			if(!picc_interrput_in(common->picc.status & PRESENT))
+pcd.c:215:				CLEAR_BIT(common->picc.status, SLOT_CHANGE);
+pcd.c:223:    up(&common->mutex);
+pcd.c:227:	queue_delayed_work(common->polling, &card_Poll, (common->pcd.poll_interval * HZ) / 1000);
+pcd.c:460:    sema_init(&common->mutex, 0);    // initial a semaphore, and lock it       
+pcd.c:470:    common->polling = create_singlethread_workqueue("polling picc");
+pcd.c:471:    if(!common->polling)
+pcd.c:478:    up(&common->mutex);                 
+pcd.c:486:    up(&common->mutex);
+pcd.c:514:    if (down_interruptible(&common->mutex)) 
+pcd.c:521:        flush_workqueue(common->polling);
+pcd.c:523:    destroy_workqueue(common->polling);
+pcd.c:529:    up(&common->mutex);
+picc.c:749:	else if(fsd < 24)	common->pcd.FSDI = 0;		// FSD = 16 Bytes
+picc.c:750:	else if(fsd < 32)	common->pcd.FSDI = 1;		// FSD = 24 Bytes
+picc.c:751:	else if(fsd < 40)	common->pcd.FSDI = 2;		// FSD = 32 Bytes
+picc.c:752:	else if(fsd < 48)	common->pcd.FSDI = 3;		// FSD = 40 Bytes
+picc.c:753:	else if(fsd < 64)	common->pcd.FSDI = 4;		// FSD = 48 Bytes
+picc.c:754:	else if(fsd < 96)	common->pcd.FSDI = 5;		// FSD = 64 Bytes
+picc.c:755:	else if(fsd < 128)	common->pcd.FSDI = 6;		// FSD = 96 Bytes
+picc.c:756:	else if(fsd < 256)	common->pcd.FSDI = 7;		// FSD = 128 Bytes
+picc.c:757:	else		common->pcd.FSDI = 8;			// FSD is not more than 256 Bytes
+picc.c:760:        /* common->pcd.support_card_type = TOPAZ|FELICA414|FELICA212|TYPEB|TYPEA;    // poll all card type */
+picc.c:761:        common->pcd.support_card_type = TYPEA;
+picc.c:762:	common->pcd.flags_polling     = POLLING_CARD_ENABLE|AUTO_POLLING|AUTO_RATS;    // auto RATS, auto poll, poll card
+picc.c:763:    common->pcd.max_speed   = 0x1B;
+picc.c:764:    common->pcd.max_speed   = 0x1B;
+picc.c:765:    common->pcd.current_speed   = 0x80;
+picc.c:766:    common->pcd.poll_interval = 500;     // poll card interval time: default 500ms
+picc.c:768:    common->picc.states   = 0x00;
+picc.c:769:    common->picc.flags_TCL    = 0x00;
+picc.c:770:    common->picc.FSCI     = 0x02;    // 32 bytes
+picc.c:771:    common->picc.FWI      = 0x04;    // 4.8ms
+picc.c:772:    common->picc.SFGI     = 0x00;    // default value is 0
+picc.c:773:    common->picc.speed    = 0x80;
+picc.c:774:	common->picc.key_valid = 0x00;
+picc.c:776:	//memset(common->pcd.mifare_key, 0xFF, sizeof(common->pcd.mifare_key));
+picc.c:778:    common->picc.flags_status = 0x00;
+picc.c:780:	common->pcd.picc = &common->picc;
+picc.c:781:	common->picc.pcd = &common->pcd;
+picc.c:790:	ret = pn512_init(&common->picc.request);      
